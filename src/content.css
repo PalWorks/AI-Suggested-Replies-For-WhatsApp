@@ -33,7 +33,7 @@
     pointer-events: none;
 }
 
-.gptbtn.loading .btn-text {
+.gptbtn.loading .gptbtn-text {
     opacity: 0;
     pointer-events: none;
 }

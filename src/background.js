@@ -1,5 +1,6 @@
 // background.js - version 2025-08-05T00:44:54Z
 import {strToBuf, b64ToBuf, fetchWithRetry} from './utils.js';
+import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
 
@@ -48,7 +49,7 @@ async function sendOpenAI(prompt, tabId) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4o-mini',
         messages: [{role: 'user', content: prompt}],
         temperature: 0.7,
         max_tokens: 150,
@@ -91,7 +92,8 @@ async function sendOpenAI(prompt, tabId) {
       chrome.tabs.sendMessage(tabId, {type: 'done'});
     }
   } catch (err) {
-    chrome.tabs.sendMessage(tabId, {type: 'error'});
+    chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
+    logToGitHub(`OpenAI request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
   }
 }
 
