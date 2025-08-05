@@ -2,7 +2,7 @@
 
 Welcome to the **WhatsApp Web Answer Suggestions from ChatGPT** Chrome extension repository! This extension is designed
 to make your WhatsApp Web experience more productive and efficient by providing you with AI-generated answer suggestions
-powered by OpenAI's ChatGPT.
+powered by popular LLM providers such as OpenAI, OpenRouter, Anthropic Claude, and Mistral.
 
 ## Chrome web store location:
 
@@ -15,6 +15,7 @@ https://chrome.google.com/webstore/detail/chatgpt-answers-for-whats/bmbidjjfpkml
 - Quick and easy installation
 - Seamless integration with WhatsApp Web UI
 - Completely free to use
+- API key stored encrypted locally
 
 ## Installation
 
@@ -33,7 +34,7 @@ https://chrome.google.com/webstore/detail/chatgpt-answers-for-whats/bmbidjjfpkml
 
 ## Privacy and Security
 
-Note that this extension sends part of the chat-history to openai.
+Note that this extension sends part of the chat-history to the selected LLM provider.
 It warns the user for this, since it is not as secure as end-to-end encryption that WhatsApp normally employs.
 
 ## Contribute
