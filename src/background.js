@@ -4,6 +4,12 @@ import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.encryptedApiKey || changes.apiKey)) {
+    decryptedApiKey = null;
+  }
+});
+
 async function getApiKey() {
   const {apiKey, encryptedApiKey, iv, encKey} = await chrome.storage.local.get({
     apiKey: '',
@@ -25,7 +31,7 @@ async function getApiKey() {
 async function sendLLM(prompt, tabId) {
   try {
     const apiKey = await getApiKey();
-    const {apiChoice} = await chrome.storage.local.get({apiChoice: 'openai'});
+    const {apiChoice, modelChoice} = await chrome.storage.local.get({apiChoice: 'openai', modelChoice: 'gpt-4o-mini'});
     if (!apiKey) {
       chrome.tabs.sendMessage(tabId, {type: 'error', data: 'Please set your API key in the extension options.'});
       return;
@@ -46,7 +52,7 @@ async function sendLLM(prompt, tabId) {
       headers.Authorization = `Bearer ${apiKey}`;
       headers['HTTP-Referer'] = 'https://web.whatsapp.com';
       headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
-      body = JSON.stringify({...basePayload, model: 'openai/gpt-4o-mini'});
+      body = JSON.stringify({...basePayload, model: modelChoice});
     } else if (apiChoice === 'claude') {
       url = 'https://api.anthropic.com/v1/messages';
       headers = {
@@ -55,18 +61,18 @@ async function sendLLM(prompt, tabId) {
         'anthropic-version': '2023-06-01'
       };
       body = JSON.stringify({
-        model: 'claude-3-haiku-20240307',
+        model: modelChoice,
         messages: [{role: 'user', content: prompt}],
         max_tokens: 150
       });
     } else if (apiChoice === 'mistral') {
       url = 'https://api.mistral.ai/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;
-      body = JSON.stringify({...basePayload, model: 'mistral-small'});
+      body = JSON.stringify({...basePayload, model: modelChoice});
     } else {
       url = 'https://api.openai.com/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;
-      body = JSON.stringify({...basePayload, model: 'gpt-4o-mini'});
+      body = JSON.stringify({...basePayload, model: modelChoice});
     }
 
     const response = await fetchWithRetry(url, {

@@ -45,10 +45,22 @@
             <option value="claude">Claude (Anthropic)</option>
             <option value="mistral">Mistral</option>
         </select>
+        <label for="model-choice" style="margin-top:10px;">Model:</label>
+        <select id="model-choice" name="model-choice">
+            <option value="gpt-4o">OpenAI gpt-4o</option>
+            <option value="gpt-4o-mini">OpenAI gpt-4o-mini</option>
+            <option value="gpt-4o-nano">OpenAI gpt-4o-nano</option>
+            <option value="gpt-3.5-turbo">OpenAI gpt-3.5-turbo</option>
+            <option value="openai/gpt-4o-mini">OpenRouter gpt-4o-mini</option>
+            <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+            <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+        </select>
         <div id="api-key-container" style="margin-top: 10px;">
             <label for="api-key">API Key:</label>
             <div class="input-with-link">
                 <input type="password" id="api-key" name="api-key" required>
+                <span id="toggle-api-key" class="toggle-visibility">👁️</span>
+                <span id="api-key-status" class="status-icon"></span>
             </div>
             <p>Your API key is stored encrypted locally.</p>
         </div>

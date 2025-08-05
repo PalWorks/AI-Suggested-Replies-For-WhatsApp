@@ -84,19 +84,25 @@ button[type="submit"]:hover {
 
 .input-with-link {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 20px;
 }
 
-.input-with-link input[type="password"] {
+.input-with-link input[type="password"],
+.input-with-link input[type="text"] {
+    flex: 1;
     margin-bottom: 0;
 }
 
-.input-with-link a {
-    margin-left: 10px;
-    min-width: 80px;
-    white-space: nowrap;
-    align-self: center;
+.toggle-visibility {
+    margin-left: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.status-icon {
+    margin-left: 8px;
+    font-size: 1.2em;
 }
 
 .custom-alert {
