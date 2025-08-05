@@ -18,11 +18,28 @@ export function b64ToBuf(b64) {
   return Uint8Array.from(Buffer.from(b64, 'base64'));
 }
 
-export async function fetchWithRetry(url, options, attempts = 3, delays = [500, 1000, 2000], fetcher = fetch) {
+export async function fetchWithRetry(
+  url,
+  options,
+  attempts = 3,
+  delays = [500, 1000, 2000],
+  fetcher = fetch,
+  logger = null
+) {
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetcher(url, options);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        if (logger) {
+          try {
+            const text = await res.text();
+            await logger(`HTTP ${res.status}: ${text}`);
+          } catch (e) {
+            // ignore logging errors
+          }
+        }
+        throw new Error('HTTP ' + res.status);
+      }
       return res;
     } catch (err) {
       if (i === attempts - 1) throw err;
