@@ -44,7 +44,7 @@ async function sendLLM(prompt, tabId) {
     if (apiChoice === 'openrouter') {
       url = 'https://openrouter.ai/api/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;
-      headers['HTTP-Referer'] = 'https://github.com/PalWorks/AI-Suggested-Replies-For-WhatsApp';
+      headers['HTTP-Referer'] = 'https://web.whatsapp.com';
       headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
       body = JSON.stringify({...basePayload, model: 'openai/gpt-4o-mini'});
     } else if (apiChoice === 'claude') {
