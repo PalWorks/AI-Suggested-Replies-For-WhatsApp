@@ -30,7 +30,6 @@ function saveOptions(e) {
     const sendHistory = document.querySelector('input[name="send-history"]:checked').value;
     const toneOfVoice = document.getElementById('tone-of-voice').value;
     const encryptKey = document.getElementById('encrypt-key').checked;
-    console.log('Saving options with sendHistory:', sendHistory);
 
     const storeObj = {
         sendHistory: sendHistory,
@@ -57,8 +56,7 @@ function saveOptions(e) {
             storeObj.iv = bufToB64(iv);
             storeObj.apiKey = '';
             chrome.storage.local.set(storeObj, () => {
-                console.log('Options saved successfully');
-                const alertBox = document.querySelector('.toast');
+                  const alertBox = document.querySelector('.toast');
                 alertBox.style.display = 'block';
                 setTimeout(function () {
                     alertBox.style.display = 'none';
@@ -73,8 +71,7 @@ function saveOptions(e) {
         storeObj.salt = '';
         storeObj.iv = '';
         chrome.storage.local.set(storeObj, () => {
-            console.log('Options saved successfully');
-            const alertBox = document.querySelector('.toast');
+              const alertBox = document.querySelector('.toast');
             alertBox.style.display = 'block';
             setTimeout(function () {
                 alertBox.style.display = 'none';

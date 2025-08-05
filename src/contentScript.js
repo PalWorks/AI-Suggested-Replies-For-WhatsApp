@@ -12,12 +12,6 @@
 // For more information on Content Scripts,
 // See https://developer.chrome.com/extensions/content_scripts
 
-// Log `title` of current active web page
-const pageTitle = document.head.getElementsByTagName('title')[0].innerHTML;
-console.log(
-    `Page title is: '${pageTitle}' - evaluated by Chrome extension's 'contentScript.js' file`
-);
-
 // const link = document.createElement('link');
 // link.rel = 'stylesheet';
 // link.type = 'text/css';
@@ -30,19 +24,16 @@ let apiKey = null;
 let streamingText = '';
 
 function readData() {
-    console.log('readData')
     try {
         chrome.storage.local.get({
             apiKey: '',
             sendHistory: 'manual',
         }, (result) => {
-            console.log('Storage result:', result); // Debug log
             apiKey = result.apiKey;
             sendHistory = result.sendHistory;
-            console.log('sendHistory set to:', sendHistory); // Debug log
         })
     } catch (e) {
-        console.error('Error reading storage:', e); // Debug log
+        console.error('Error reading storage:', e);
     }
 }
 
@@ -87,7 +78,6 @@ async function createPrompt(lastIsMine, chatHistoryShort) {
 
     const tone_of_voice = result.toneOfVoice;
     let prompt = promptPrefix1 + ' ' + promptCenter + ' ' + tone_of_voice + '\n\n' + "chat history:\n" + chatHistoryShort + "\n\n" + mePrefix;
-    console.log("prompt:", prompt)
     return prompt;
 }
 
@@ -239,7 +229,6 @@ function injectUI(addedNode) {
         chrome.runtime.sendMessage({action: 'openOptionsPage'});
     });
     newFooter.appendChild(privacyNotice);
-    console.log("sendHistory:", sendHistory)
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(addedNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
@@ -255,7 +244,6 @@ function injectUI(addedNode) {
         triggerEvent()
     }
     const gptButton = gptButtonObject.gptButton;
-    console.log("gptButton:", gptButton)
     gptButton.addEventListener('click', () => {
         gptButtonClicked();
 
@@ -272,9 +260,7 @@ const observer = new MutationObserver(function (mutations) {
                 if (addedNodeId === 'main') {
                     injectUI(addedNode);
                 } else if (addedNode.role === 'row') { // when chat messages come in (or are sent out by me)
-                    // console.log("row added:", addedNode)
                     if (sendHistory === 'auto') {
-                        console.log("uploadButton present")
                         triggerEvent()
                     }
                 }
@@ -333,7 +319,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         globalGptButtonObject.setBusy(false);
     } else if (request.type === 'error') {
         globalGptButtonObject.setBusy(false);
-        writeTextToSuggestionField('Failed to generate reply');
+        writeTextToSuggestionField(request.data || 'Failed to generate reply');
     } else if (request.message === 'gptResponse') {
         const response = request.response;
         globalGptButtonObject.setBusy(false);
