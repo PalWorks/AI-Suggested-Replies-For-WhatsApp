@@ -4,10 +4,10 @@
   "version": "0.0.7",
   "description": "AI suggested replies for WhatsApp™ web",
   "icons": {
-    "16": "Ext-Icon-1.png",
-    "32": "Ext-Icon-1.png",
-    "48": "Ext-Icon-1.png",
-    "128": "Ext-Icon-1.png"
+    "16": "icons/Ext-Icon-1.png",
+    "32": "icons/Ext-Icon-1.png",
+    "48": "icons/Ext-Icon-1.png",
+    "128": "icons/Ext-Icon-1.png"
   },
   "background": {
     "service_worker": "background.js",
@@ -15,7 +15,7 @@
   },
   "action": {
     "default_title": "AI Suggested Replies For WhatsApp",
-    "default_icon": "Ext-Icon-1.png"
+    "default_icon": "icons/Ext-Icon-1.png"
   },
   "options_page": "options/options.html",
   "permissions": [
