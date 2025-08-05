@@ -1,3 +1,4 @@
+// contentScript.js - version 2025-08-05T00:44:54Z
 'use strict';
 
 // Content script file will run in the context of web page.
@@ -26,6 +27,7 @@ console.log(
 // let apiKey;
 let sendHistory = false;
 let apiKey = null;
+let streamingText = '';
 
 function readData() {
     console.log('readData')
@@ -43,8 +45,6 @@ function readData() {
         console.error('Error reading storage:', e); // Debug log
     }
 }
-
-readData();
 
 async function copyToSendField(text) {
     try {
@@ -89,6 +89,49 @@ async function createPrompt(lastIsMine, chatHistoryShort) {
     let prompt = promptPrefix1 + ' ' + promptCenter + ' ' + tone_of_voice + '\n\n' + "chat history:\n" + chatHistoryShort + "\n\n" + mePrefix;
     console.log("prompt:", prompt)
     return prompt;
+}
+
+function extractConversation(node) {
+    return parseHtml(node);
+}
+
+function showPromptEditor() {
+    chrome.storage.local.get({toneOfVoice: 'Use Emoji and my own writing style. Be concise.'}, ({toneOfVoice}) => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '20%';
+        overlay.style.left = '50%';
+        overlay.style.transform = 'translateX(-50%)';
+        overlay.style.background = '#fff';
+        overlay.style.border = '1px solid #ccc';
+        overlay.style.padding = '10px';
+        overlay.style.zIndex = '10000';
+        const textarea = document.createElement('textarea');
+        textarea.rows = 4;
+        textarea.style.width = '200px';
+        textarea.value = toneOfVoice;
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Reset to default';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        saveBtn.addEventListener('click', () => {
+            chrome.storage.local.set({toneOfVoice: textarea.value});
+            document.body.removeChild(overlay);
+        });
+        resetBtn.addEventListener('click', () => {
+            textarea.value = 'Use Emoji and my own writing style. Be concise.';
+        });
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        overlay.appendChild(textarea);
+        overlay.appendChild(saveBtn);
+        overlay.appendChild(resetBtn);
+        overlay.appendChild(cancelBtn);
+        document.body.appendChild(overlay);
+    });
 }
 
 let globalGptButtonObject;
@@ -142,7 +185,7 @@ chrome.storage.local.onChanged.addListener((changes) => {
     }
 });
 
-function processMainNodeAdded(addedNode) {
+function injectUI(addedNode) {
     const mainNode = addedNode;
     globalMainNode = addedNode;
     readData();
@@ -160,13 +203,49 @@ function processMainNodeAdded(addedNode) {
     copyButton.addEventListener('click', () => {
         copyToSendField(newFooterParagraph.textContent);
     });
+    const buttonContainer = copyButton.parentNode;
+    const editButton = document.createElement('button');
+    editButton.textContent = 'Edit Prompt';
+    editButton.style.marginRight = '10px';
+    editButton.style.fontSize = '12px';
+    editButton.addEventListener('click', showPromptEditor);
+    buttonContainer.insertBefore(editButton, copyButton);
+    const privacyNotice = document.createElement('div');
+    privacyNotice.style.fontSize = '10px';
+    privacyNotice.style.color = '#54656F';
+    privacyNotice.style.position = 'relative';
+    privacyNotice.textContent = 'Messages are sent to OpenAI for processing ';
+    const infoIcon = document.createElement('span');
+    infoIcon.textContent = 'ℹ️';
+    infoIcon.style.cursor = 'pointer';
+    privacyNotice.appendChild(infoIcon);
+    const tooltip = document.createElement('div');
+    tooltip.style.position = 'absolute';
+    tooltip.style.bottom = '100%';
+    tooltip.style.left = '0';
+    tooltip.style.background = '#fff';
+    tooltip.style.border = '1px solid #ccc';
+    tooltip.style.padding = '4px';
+    tooltip.style.display = 'none';
+    tooltip.style.zIndex = '1000';
+    tooltip.style.fontSize = '10px';
+    tooltip.innerHTML = 'Messages are sent to OpenAI for processing. <a href="#" id="privacy-link">Options</a>';
+    privacyNotice.appendChild(tooltip);
+    infoIcon.addEventListener('mouseenter', () => tooltip.style.display = 'block');
+    infoIcon.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+    tooltip.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+    tooltip.querySelector('#privacy-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.runtime.sendMessage({action: 'openOptionsPage'});
+    });
+    newFooter.appendChild(privacyNotice);
     console.log("sendHistory:", sendHistory)
     parseHtmlFunction = async function () {
-        const {chatHistoryShort, lastIsMine} = parseHtml(addedNode)
-        // console.log("chatInput:", chatHistoryShort)
+        const {chatHistoryShort, lastIsMine} = extractConversation(addedNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
-        gptButtonObject.setBusy(true)
-        writeTextToSuggestionField('', true); // Show loading spinner
+        gptButtonObject.setBusy(true);
+        streamingText = '';
+        writeTextToSuggestionField('', true);
         await chrome.runtime.sendMessage({
             message: "sendChatToGpt",
             prompt: prompt,
@@ -191,7 +270,7 @@ const observer = new MutationObserver(function (mutations) {
             mutation.addedNodes.forEach(function (addedNode) {
                 const addedNodeId = addedNode.id
                 if (addedNodeId === 'main') {
-                    processMainNodeAdded(addedNode);
+                    injectUI(addedNode);
                 } else if (addedNode.role === 'row') { // when chat messages come in (or are sent out by me)
                     // console.log("row added:", addedNode)
                     if (sendHistory === 'auto') {
@@ -206,11 +285,15 @@ const observer = new MutationObserver(function (mutations) {
 
 let confirmVisible = false;
 
-// Start observing the target node for configured mutations
-observer.observe(document.body, {
-    childList: true, // Watch for changes in the children of the node
-    subtree: true // Watch for changes in the descendants of the node
-});
+function initExtension() {
+    readData();
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+initExtension();
 
 async function writeTextToSuggestionField(response, isLoading = false) {
     try {
@@ -242,8 +325,16 @@ async function writeTextToSuggestionField(response, isLoading = false) {
     }
 }
 
-chrome.runtime.onMessage.addListener((request) => {
-    if (request.message === "gptResponse") {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'token') {
+        streamingText += request.data;
+        writeTextToSuggestionField(streamingText);
+    } else if (request.type === 'done') {
+        globalGptButtonObject.setBusy(false);
+    } else if (request.type === 'error') {
+        globalGptButtonObject.setBusy(false);
+        writeTextToSuggestionField('Failed to generate reply');
+    } else if (request.message === 'gptResponse') {
         const response = request.response;
         globalGptButtonObject.setBusy(false);
         if (response.error !== null && response.error !== undefined) {
@@ -251,5 +342,10 @@ chrome.runtime.onMessage.addListener((request) => {
             return;
         }
         writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
+    } else if (request.type === 'requestPassphrase') {
+        const pass = prompt('Enter passphrase to decrypt API key');
+        sendResponse(pass);
+        return true;
     }
-})
+    return true;
+});
