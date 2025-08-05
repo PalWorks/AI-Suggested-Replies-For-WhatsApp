@@ -1,7 +1,14 @@
-import {strToBuf, bufToB64, b64ToBuf} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf, getGenerationHistory, clearGenerationHistory} from '../utils.js';
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
+document.addEventListener('DOMContentLoaded', () => {
+  restoreOptions();
+  renderHistory();
+});
 document.getElementById('options-form').addEventListener('submit', saveOptions);
+document.getElementById('clear-history').addEventListener('click', async () => {
+  await clearGenerationHistory();
+  renderHistory();
+});
 
 const apiKeyInput = document.getElementById('api-key');
 const apiChoiceSelect = document.getElementById('api-choice');
@@ -157,4 +164,18 @@ async function restoreOptions() {
     sendHistoryRadio.checked = true;
   }
   validateApiKey();
+}
+
+async function renderHistory() {
+  const history = await getGenerationHistory();
+  const tbody = document.querySelector('#history-table tbody');
+  tbody.innerHTML = '';
+  history.forEach(item => {
+    const tr = document.createElement('tr');
+    const ts = new Date(item.timestamp).toLocaleString();
+    const tokens = item.tokens?.total_tokens ?? item.tokens?.output_tokens ?? item.tokens?.completion_tokens ?? '';
+    const snippet = item.reply ? item.reply.slice(0, 50) : '';
+    tr.innerHTML = `<td>${ts}</td><td>${item.provider}</td><td>${item.model}</td><td>${tokens}</td><td>${snippet}</td>`;
+    tbody.appendChild(tr);
+  });
 }

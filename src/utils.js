@@ -47,3 +47,19 @@ export async function fetchWithRetry(
     }
   }
 }
+
+// Generation history helpers
+export async function getGenerationHistory() {
+  const {generationHistory = []} = await chrome.storage.local.get({generationHistory: []});
+  return generationHistory;
+}
+
+export async function appendGenerationHistory(entry) {
+  const history = await getGenerationHistory();
+  history.push(entry);
+  await chrome.storage.local.set({generationHistory: history});
+}
+
+export async function clearGenerationHistory() {
+  await chrome.storage.local.set({generationHistory: []});
+}

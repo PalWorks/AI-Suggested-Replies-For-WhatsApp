@@ -1,5 +1,5 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {b64ToBuf, fetchWithRetry} from './utils.js';
+import {b64ToBuf, fetchWithRetry, appendGenerationHistory} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
@@ -80,15 +80,26 @@ async function sendLLM(prompt, tabId) {
       headers,
       body
     }, 3, [500, 1000, 2000], fetch, logToGitHub);
+    let fullText = '';
+    let usageData;
 
     if (apiChoice === 'claude') {
       const data = await response.json();
       const text = data.content?.[0]?.text || '';
+      usageData = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
       chrome.tabs.sendMessage(tabId, {type: 'done'});
+      fullText = text;
+      await appendGenerationHistory({
+        provider: apiChoice,
+        model: modelChoice,
+        timestamp: Date.now(),
+        tokens: usageData,
+        reply: fullText
+      });
       return;
     }
 
@@ -110,7 +121,11 @@ async function sendLLM(prompt, tabId) {
             const parsed = JSON.parse(data);
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
+              fullText += token;
               chrome.tabs.sendMessage(tabId, {type: 'token', data: token});
+            }
+            if (parsed.usage) {
+              usageData = parsed.usage;
             }
           } catch (e) {
             // ignore parse errors
@@ -118,14 +133,30 @@ async function sendLLM(prompt, tabId) {
         }
       }
       chrome.tabs.sendMessage(tabId, {type: 'done'});
+      await appendGenerationHistory({
+        provider: apiChoice,
+        model: modelChoice,
+        timestamp: Date.now(),
+        tokens: usageData,
+        reply: fullText
+      });
     } else {
       const data = await response.json();
       const text = data.choices?.[0]?.message?.content || '';
+      usageData = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
       chrome.tabs.sendMessage(tabId, {type: 'done'});
+      fullText = text;
+      await appendGenerationHistory({
+        provider: apiChoice,
+        model: modelChoice,
+        timestamp: Date.now(),
+        tokens: usageData,
+        reply: fullText
+      });
     }
   } catch (err) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});

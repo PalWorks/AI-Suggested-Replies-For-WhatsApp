@@ -148,4 +148,46 @@ button[type="submit"]:hover {
     text-align: center;
 }
 
+#generation-history {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+#history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+#history-table th,
+#history-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+#history-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #eee;
+    }
+
+    form {
+        background-color: #1e1e1e;
+    }
+
+    #history-table th,
+    #history-table td {
+        border-color: #555;
+    }
+
+    #history-table tbody tr:nth-child(even) {
+        background-color: #2a2a2a;
+    }
+}
+
 
