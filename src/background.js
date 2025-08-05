@@ -4,6 +4,12 @@ import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.encryptedApiKey || changes.apiKey)) {
+    decryptedApiKey = null;
+  }
+});
+
 async function getApiKey() {
   const {apiKey, encryptedApiKey, iv, encKey} = await chrome.storage.local.get({
     apiKey: '',
