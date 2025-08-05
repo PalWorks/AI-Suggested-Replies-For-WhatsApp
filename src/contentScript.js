@@ -204,7 +204,7 @@ function injectUI(addedNode) {
     privacyNotice.style.fontSize = '10px';
     privacyNotice.style.color = '#54656F';
     privacyNotice.style.position = 'relative';
-    privacyNotice.textContent = 'Messages are sent to OpenAI for processing ';
+  privacyNotice.textContent = 'Messages are sent to the configured AI provider for processing ';
     const infoIcon = document.createElement('span');
     infoIcon.textContent = 'ℹ️';
     infoIcon.style.cursor = 'pointer';
@@ -219,7 +219,7 @@ function injectUI(addedNode) {
     tooltip.style.display = 'none';
     tooltip.style.zIndex = '1000';
     tooltip.style.fontSize = '10px';
-    tooltip.innerHTML = 'Messages are sent to OpenAI for processing. <a href="#" id="privacy-link">Options</a>';
+  tooltip.innerHTML = 'Messages are sent to your configured AI provider for processing. <a href="#" id="privacy-link">Options</a>';
     privacyNotice.appendChild(tooltip);
     infoIcon.addEventListener('mouseenter', () => tooltip.style.display = 'block');
     infoIcon.addEventListener('mouseleave', () => tooltip.style.display = 'none');
@@ -328,10 +328,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
         writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
-    } else if (request.type === 'requestPassphrase') {
-        const pass = prompt('Enter passphrase to decrypt API key');
-        sendResponse(pass);
-        return true;
     }
     return true;
 });

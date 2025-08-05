@@ -11,13 +11,10 @@
 <div id="chatHistoryWarningAlert" class="custom-alert">
     <div class="alert-content">
         <div>
-            <p>The last messages of you chat-conversation will be sent to openai automatically, each time you
+            <p>The last messages of your chat-conversation will be sent to the selected AI provider automatically, each time you
                 select another user, <br> or when a message comes into the currently
                 selected conversation.<br>
-                They are kept and used by openai according to
-                their <a href="https://openai.com/policies/api-data-usage-policies"
-                         target="_blank">api-documentation</a> and <a href="https://openai.com/policies/privacy-policy"
-                                                                      target="_blank">privacy policy</a>.<br> This is
+                They are kept and used according to that provider's API documentation and privacy policy.<br> This is
                 less secure than the end-to-end encryption that <a
                         href="https://faq.whatsapp.com/820124435853543/?helpref=uf_share"
                         target="_blank">whatsapp(tm) uses</a>.<br></p>
@@ -41,27 +38,19 @@
 
     <fieldset>
         <legend>Choose API:</legend>
-        <div style="display: flex; flex-direction: column;">
-            <div>
-                <input type="radio" id="openai-api" name="api-choice" value="openai" checked>
-                <label for="openai-api">OpenAI API</label>
-                <div id="api-key-container" style="margin-left: 20px;">
-                    <label for="api-key">API Key:</label>
-                    <div class="input-with-link">
-                        <input type="password" id="api-key" name="api-key" required>
-                        <div>
-                        <a href="https://platform.openai.com/account/api-keys"
-                           target="_blank" id="api-key-link">Get it here</a><br>
-                            <a href="https://platform.openai.com/account/billing/overview"
-                               target="_blank" id="credit-link">and add credits here</a>
-                        </div>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="encrypt-key">
-                        <label for="encrypt-key">Encrypt API key with passphrase</label>
-                    </div>
-                </div>
+        <label for="api-choice">Provider:</label>
+        <select id="api-choice" name="api-choice">
+            <option value="openai">OpenAI</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="mistral">Mistral</option>
+        </select>
+        <div id="api-key-container" style="margin-top: 10px;">
+            <label for="api-key">API Key:</label>
+            <div class="input-with-link">
+                <input type="password" id="api-key" name="api-key" required>
             </div>
+            <p>Your API key is stored encrypted locally.</p>
         </div>
     </fieldset>
 

@@ -1,61 +1,88 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {strToBuf, b64ToBuf, fetchWithRetry} from './utils.js';
+import {b64ToBuf, fetchWithRetry} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
 
-async function requestPassphrase() {
-  return chrome.runtime.sendMessage({type: 'requestPassphrase'});
-}
-
 async function getApiKey() {
-  const {encryptApiKey, apiKey, encryptedApiKey, salt, iv} = await chrome.storage.local.get({
-    encryptApiKey: false,
+  const {apiKey, encryptedApiKey, iv, encKey} = await chrome.storage.local.get({
     apiKey: '',
     encryptedApiKey: '',
-    salt: '',
-    iv: ''
+    iv: '',
+    encKey: ''
   });
-  if (!encryptApiKey) return apiKey;
-  if (decryptedApiKey) return decryptedApiKey;
-  const passphrase = await requestPassphrase();
-  if (!passphrase) throw new Error('Passphrase required');
-  const keyMaterial = await crypto.subtle.importKey('raw', strToBuf(passphrase), 'PBKDF2', false, ['deriveKey']);
-  const key = await crypto.subtle.deriveKey(
-    {name: 'PBKDF2', salt: b64ToBuf(salt), iterations: 100000, hash: 'SHA-256'},
-    keyMaterial,
-    {name: 'AES-GCM', length: 256},
-    false,
-    ['decrypt']
-  );
-  const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(iv)}, key, b64ToBuf(encryptedApiKey));
-  decryptedApiKey = new TextDecoder().decode(decrypted);
-  return decryptedApiKey;
+  if (encryptedApiKey && iv && encKey) {
+    if (decryptedApiKey) return decryptedApiKey;
+    const key = await crypto.subtle.importKey('raw', b64ToBuf(encKey), 'AES-GCM', false, ['decrypt']);
+    const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(iv)}, key, b64ToBuf(encryptedApiKey));
+    decryptedApiKey = new TextDecoder().decode(decrypted);
+    return decryptedApiKey;
+  }
+  return apiKey;
 }
 
 
-async function sendOpenAI(prompt, tabId) {
+async function sendLLM(prompt, tabId) {
   try {
     const apiKey = await getApiKey();
+    const {apiChoice} = await chrome.storage.local.get({apiChoice: 'openai'});
     if (!apiKey) {
-      chrome.tabs.sendMessage(tabId, {type: 'error', data: 'Please set your OpenAI API key in the extension options.'});
+      chrome.tabs.sendMessage(tabId, {type: 'error', data: 'Please set your API key in the extension options.'});
       return;
     }
 
-    const response = await fetchWithRetry('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
+    let url;
+    let headers = {'Content-Type': 'application/json'};
+    let body;
+    const basePayload = {
+      messages: [{role: 'user', content: prompt}],
+      temperature: 0.7,
+      max_tokens: 150,
+      stream: true
+    };
+
+    if (apiChoice === 'openrouter') {
+      url = 'https://openrouter.ai/api/v1/chat/completions';
+      headers.Authorization = `Bearer ${apiKey}`;
+      body = JSON.stringify({...basePayload, model: 'gpt-4o-mini'});
+    } else if (apiChoice === 'claude') {
+      url = 'https://api.anthropic.com/v1/messages';
+      headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      };
+      body = JSON.stringify({
+        model: 'claude-3-haiku-20240307',
         messages: [{role: 'user', content: prompt}],
-        temperature: 0.7,
-        max_tokens: 150,
-        stream: true
-      })
+        max_tokens: 150
+      });
+    } else if (apiChoice === 'mistral') {
+      url = 'https://api.mistral.ai/v1/chat/completions';
+      headers.Authorization = `Bearer ${apiKey}`;
+      body = JSON.stringify({...basePayload, model: 'mistral-small'});
+    } else {
+      url = 'https://api.openai.com/v1/chat/completions';
+      headers.Authorization = `Bearer ${apiKey}`;
+      body = JSON.stringify({...basePayload, model: 'gpt-4o-mini'});
+    }
+
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers,
+      body
     });
+
+    if (apiChoice === 'claude') {
+      const data = await response.json();
+      const text = data.content?.[0]?.text || '';
+      chrome.tabs.sendMessage(tabId, {
+        message: 'gptResponse',
+        response: {text}
+      });
+      chrome.tabs.sendMessage(tabId, {type: 'done'});
+      return;
+    }
 
     if (response.body && response.body.getReader) {
       const reader = response.body.getReader();
@@ -85,15 +112,16 @@ async function sendOpenAI(prompt, tabId) {
       chrome.tabs.sendMessage(tabId, {type: 'done'});
     } else {
       const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || '';
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
-        response: {text: data.choices[0].message.content}
+        response: {text}
       });
       chrome.tabs.sendMessage(tabId, {type: 'done'});
     }
   } catch (err) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
-    logToGitHub(`OpenAI request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
+    logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
   }
 }
 
@@ -102,7 +130,7 @@ function initExtension() {
     if (request.action === 'openOptionsPage') {
       chrome.runtime.openOptionsPage();
     } else if (request.message === 'sendChatToGpt') {
-      sendOpenAI(request.prompt, sender.tab.id);
+      sendLLM(request.prompt, sender.tab.id);
       return true;
     }
   });

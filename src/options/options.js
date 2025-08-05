@@ -1,4 +1,4 @@
-import {strToBuf, bufToB64} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf} from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('options-form').addEventListener('submit', saveOptions);
@@ -24,83 +24,67 @@ document.getElementById('send-history-auto').addEventListener('click', function 
     showCustomAlert();
 });
 
-function saveOptions(e) {
-    e.preventDefault();
-    const apiKey = document.getElementById('api-key').value;
-    const sendHistory = document.querySelector('input[name="send-history"]:checked').value;
-    const toneOfVoice = document.getElementById('tone-of-voice').value;
-    const encryptKey = document.getElementById('encrypt-key').checked;
+async function getOrCreateEncKey() {
+  const {encKey} = await chrome.storage.local.get({encKey: ''});
+  if (encKey) {
+    return crypto.subtle.importKey('raw', b64ToBuf(encKey), 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+  const key = await crypto.subtle.generateKey({name: 'AES-GCM', length: 256}, true, ['encrypt', 'decrypt']);
+  const raw = await crypto.subtle.exportKey('raw', key);
+  await chrome.storage.local.set({encKey: bufToB64(raw)});
+  return key;
+}
 
-    const storeObj = {
-        sendHistory: sendHistory,
-        apiChoice: 'openai',
-        toneOfVoice: toneOfVoice,
-        encryptApiKey: encryptKey
-    };
-    if (encryptKey) {
-        const passphrase = prompt('Enter passphrase to encrypt API key');
-        if (!passphrase) {
-            alert('Passphrase required');
-            return;
-        }
-        const salt = crypto.getRandomValues(new Uint8Array(16));
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const keyMaterial = crypto.subtle.importKey('raw', strToBuf(passphrase), 'PBKDF2', false, ['deriveKey']);
-        keyMaterial.then(km => {
-            return crypto.subtle.deriveKey({name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256'}, km, {name: 'AES-GCM', length: 256}, false, ['encrypt']);
-        }).then(key => {
-            return crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
-        }).then(enc => {
-            storeObj.encryptedApiKey = bufToB64(enc);
-            storeObj.salt = bufToB64(salt);
-            storeObj.iv = bufToB64(iv);
-            storeObj.apiKey = '';
-            chrome.storage.local.set(storeObj, () => {
-                  const alertBox = document.querySelector('.toast');
-                alertBox.style.display = 'block';
-                setTimeout(function () {
-                    alertBox.style.display = 'none';
-                    window.close()
-                }, 2000);
-            });
-        });
-        return;
-    } else {
-        storeObj.apiKey = apiKey;
-        storeObj.encryptedApiKey = '';
-        storeObj.salt = '';
-        storeObj.iv = '';
-        chrome.storage.local.set(storeObj, () => {
-              const alertBox = document.querySelector('.toast');
-            alertBox.style.display = 'block';
-            setTimeout(function () {
-                alertBox.style.display = 'none';
-                window.close()
-            }, 2000);
-        });
-    }
+async function saveOptions(e) {
+  e.preventDefault();
+  const apiKey = document.getElementById('api-key').value;
+  const sendHistory = document.querySelector('input[name="send-history"]:checked').value;
+  const toneOfVoice = document.getElementById('tone-of-voice').value;
+  const apiChoice = document.getElementById('api-choice').value;
+
+  const key = await getOrCreateEncKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
+
+  const storeObj = {
+    sendHistory: sendHistory,
+    apiChoice: apiChoice,
+    toneOfVoice: toneOfVoice,
+    encryptedApiKey: bufToB64(encrypted),
+    iv: bufToB64(iv),
+    apiKey: ''
+  };
+
+  chrome.storage.local.set(storeObj, () => {
+    const alertBox = document.querySelector('.toast');
+    alertBox.style.display = 'block';
+    setTimeout(function () {
+      alertBox.style.display = 'none';
+      window.close();
+    }, 2000);
+  });
 }
 
 function restoreOptions() {
-    chrome.storage.local.get({
-        apiKey: '',
-        sendHistory: 'manual',
-        apiChoice: 'openai',
-        toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
-        encryptApiKey: false
-    }, (items) => {
-        document.getElementById('encrypt-key').checked = items.encryptApiKey;
-        if (!items.encryptApiKey) {
-            document.getElementById('api-key').value = items.apiKey;
-        } else {
-            document.getElementById('api-key').value = '';
-            document.getElementById('api-key').placeholder = 'Encrypted';
-        }
-        document.getElementById('tone-of-voice').value = items.toneOfVoice;
+  chrome.storage.local.get({
+    apiKey: '',
+    encryptedApiKey: '',
+    sendHistory: 'manual',
+    apiChoice: 'openai',
+    toneOfVoice: 'Use Emoji and my own writing style. Be concise.'
+  }, (items) => {
+    if (items.encryptedApiKey) {
+      document.getElementById('api-key').value = '';
+      document.getElementById('api-key').placeholder = 'Encrypted';
+    } else {
+      document.getElementById('api-key').value = items.apiKey;
+    }
+    document.getElementById('tone-of-voice').value = items.toneOfVoice;
+    document.getElementById('api-choice').value = items.apiChoice;
 
-        const sendHistoryRadio = document.querySelector(`input[name="send-history"][value="${items.sendHistory}"]`);
-        if (sendHistoryRadio) {
-            sendHistoryRadio.checked = true;
-        }
-    });
+    const sendHistoryRadio = document.querySelector(`input[name="send-history"][value="${items.sendHistory}"]`);
+    if (sendHistoryRadio) {
+      sendHistoryRadio.checked = true;
+    }
+  });
 }
