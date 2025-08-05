@@ -3,22 +3,28 @@ function createGptButton() {
   gptButton.innerHTML = '<span class="gptbtn-text">ChatGPT</span>\n' +
     '  <span class="spinner"></span>\n';
   gptButton.className = 'gptbtn';
-  gptButton.style.backgroundColor = '#D9FDD3';
-  gptButton.style.color = '#54656F';
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const baseBg = prefersDark ? '#005C4B' : '#D9FDD3';
+  const hoverBg = prefersDark ? '#1F7767' : '#BCE5A7';
+  const textColor = prefersDark ? '#E9EDEF' : '#54656F';
+
+  gptButton.style.backgroundColor = baseBg;
+  gptButton.style.color = textColor;
   gptButton.style.padding = '10px';
   gptButton.style.border = 'none';
   gptButton.style.borderRadius = '5px';
-  
+
   // Add hover effect
   gptButton.style.transition = 'background-color 0.3s ease';
   gptButton.style.cursor = 'pointer';
 
   gptButton.addEventListener('mouseover', () => {
-    gptButton.style.backgroundColor = '#BCE5A7';
+    gptButton.style.backgroundColor = hoverBg;
   });
 
   gptButton.addEventListener('mouseout', () => {
-    gptButton.style.backgroundColor = '#D9FDD3';
+    gptButton.style.backgroundColor = baseBg;
   });
 
   // Add pressed effect

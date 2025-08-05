@@ -86,42 +86,49 @@ function extractConversation(node) {
 }
 
 function showPromptEditor() {
-    chrome.storage.local.get({toneOfVoice: 'Use Emoji and my own writing style. Be concise.'}, ({toneOfVoice}) => {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed';
-        overlay.style.top = '20%';
-        overlay.style.left = '50%';
-        overlay.style.transform = 'translateX(-50%)';
-        overlay.style.background = '#fff';
-        overlay.style.border = '1px solid #ccc';
-        overlay.style.padding = '10px';
-        overlay.style.zIndex = '10000';
-        const textarea = document.createElement('textarea');
-        textarea.rows = 4;
-        textarea.style.width = '200px';
-        textarea.value = toneOfVoice;
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = 'Save';
-        const resetBtn = document.createElement('button');
-        resetBtn.textContent = 'Reset to default';
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Cancel';
-        saveBtn.addEventListener('click', () => {
-            chrome.storage.local.set({toneOfVoice: textarea.value});
-            document.body.removeChild(overlay);
-        });
-        resetBtn.addEventListener('click', () => {
-            textarea.value = 'Use Emoji and my own writing style. Be concise.';
-        });
-        cancelBtn.addEventListener('click', () => {
-            document.body.removeChild(overlay);
-        });
-        overlay.appendChild(textarea);
-        overlay.appendChild(saveBtn);
-        overlay.appendChild(resetBtn);
-        overlay.appendChild(cancelBtn);
-        document.body.appendChild(overlay);
+  chrome.storage.local.get({toneOfVoice: 'Use Emoji and my own writing style. Be concise.'}, ({toneOfVoice}) => {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '20%';
+    overlay.style.left = '50%';
+    overlay.style.transform = 'translateX(-50%)';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    overlay.style.background = prefersDark ? '#1e1e1e' : '#fff';
+    overlay.style.color = prefersDark ? '#fff' : '#000';
+    overlay.style.border = prefersDark ? '1px solid #444' : '1px solid #ccc';
+    overlay.style.padding = '10px';
+    overlay.style.zIndex = '10000';
+    const textarea = document.createElement('textarea');
+    textarea.rows = 4;
+    textarea.style.width = '200px';
+    if (prefersDark) {
+      textarea.style.background = '#2b2b2b';
+      textarea.style.color = '#fff';
+      textarea.style.border = '1px solid #444';
+    }
+    textarea.value = toneOfVoice;
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'Reset to default';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    saveBtn.addEventListener('click', () => {
+      chrome.storage.local.set({toneOfVoice: textarea.value});
+      document.body.removeChild(overlay);
     });
+    resetBtn.addEventListener('click', () => {
+      textarea.value = 'Use Emoji and my own writing style. Be concise.';
+    });
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+    overlay.appendChild(textarea);
+    overlay.appendChild(saveBtn);
+    overlay.appendChild(resetBtn);
+    overlay.appendChild(cancelBtn);
+    document.body.appendChild(overlay);
+  });
 }
 
 let globalGptButtonObject;
