@@ -1,0 +1,15 @@
+{
+  "name": "ai-suggested-replies-for-whatsapp",
+  "version": "1.0.0",
+  "description": "Welcome to the **WhatsApp Web Answer Suggestions from ChatGPT** Chrome extension repository! This extension is designed to make your WhatsApp Web experience more productive and efficient by providing you with AI-generated answer suggestions powered by OpenAI's ChatGPT.",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^30.0.5"
+  }
+}

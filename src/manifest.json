@@ -9,9 +9,6 @@
     "48": "icons/icon_48.png",
     "128": "icons/icon_128.png"
   },
-  "host_permissions": [
-    "https://api.openai.com/"
-  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -21,7 +18,12 @@
   },
   "options_page": "options/options.html",
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://api.openai.com/*"
   ],
   "content_scripts": [
     {
