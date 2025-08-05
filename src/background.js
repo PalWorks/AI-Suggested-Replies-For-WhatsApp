@@ -45,7 +45,7 @@ async function sendLLM(prompt, tabId) {
       url = 'https://openrouter.ai/api/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;
       headers['HTTP-Referer'] = 'https://web.whatsapp.com';
-      headers['X-Title'] = 'GPT answers for WhatsApp web';
+      headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
       body = JSON.stringify({...basePayload, model: 'openai/gpt-4o-mini'});
     } else if (apiChoice === 'claude') {
       url = 'https://api.anthropic.com/v1/messages';
