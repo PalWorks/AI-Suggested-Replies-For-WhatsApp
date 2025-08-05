@@ -23,6 +23,21 @@ let sendHistory = false;
 let apiKey = null;
 let streamingText = '';
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local') {
+    if (changes.apiKey) {
+      apiKey = changes.apiKey.newValue;
+    }
+    if (changes.sendHistory) {
+      const {oldValue, newValue} = changes.sendHistory;
+      sendHistory = newValue;
+      if (newValue === 'auto' && oldValue !== 'auto') {
+        triggerEvent();
+      }
+    }
+  }
+});
+
 function readData() {
     try {
         chrome.storage.local.get({
