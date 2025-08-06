@@ -23,7 +23,9 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://web.whatsapp.com/*",
+    "https://web.whatsapp.com/*"
+  ],
+  "optional_host_permissions": [
     "https://api.openai.com/*",
     "https://openrouter.ai/*",
     "https://api.anthropic.com/*",
