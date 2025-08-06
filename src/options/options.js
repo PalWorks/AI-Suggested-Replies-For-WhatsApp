@@ -12,6 +12,7 @@ const apiKeyInput = document.getElementById('api-key');
 const modelInput = document.getElementById('model-name');
 const toggleBtn = document.getElementById('toggle-api-key');
 const feedbackBox = document.getElementById('api-key-feedback');
+const saveBtn = document.getElementById('save-button');
 
 let apiKeys = {};
 let modelNames = {};
@@ -93,9 +94,9 @@ async function validateApiKey() {
   }
   try {
     const res = await fetch(url, {headers});
-    setFeedback(res.ok ? 'Key verified' : 'Key not verified', res.ok ? 'success' : 'error');
+    setFeedback(res.ok ? 'Key verified' : 'Invalid key', res.ok ? 'success' : 'error');
   } catch {
-    setFeedback('Key not verified', 'error');
+    setFeedback('Error verifying key', 'error');
   }
 }
 
@@ -135,11 +136,10 @@ async function saveOptions(e) {
     if (showAdvancedImprove && !prev.showAdvancedImprove) {
       refreshWhatsAppTabs();
     }
-    const alertBox = document.querySelector('.toast');
-    alertBox.style.display = 'block';
+    const original = saveBtn.textContent;
+    saveBtn.textContent = 'Saved';
     setTimeout(() => {
-      alertBox.style.display = 'none';
-      window.close();
+      saveBtn.textContent = original;
     }, 2000);
   });
 }
