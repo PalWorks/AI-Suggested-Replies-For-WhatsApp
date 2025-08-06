@@ -22,9 +22,12 @@ body {
   }
 }
 
-#options-form {
+#options-container {
   max-width: 600px;
   margin: 0 auto;
+}
+
+#options-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -47,6 +50,22 @@ fieldset {
 
 label {
   font-weight: 600;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: inherit;
+}
+
+legend,
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: inherit;
+  margin-bottom: 10px;
+  padding: 0;
 }
 
 input,
@@ -87,16 +106,17 @@ button:hover {
 .provider-model-row {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .provider-col {
-  flex: 0 0 auto;
+  flex: 0 0 160px;
   display: flex;
   flex-direction: column;
 }
 
 #api-choice {
-  width: auto;
+  width: 100%;
 }
 
 .model-col {
@@ -176,8 +196,23 @@ input.error {
   gap: 8px;
 }
 
+.improve-section input[type="checkbox"] {
+  width: auto;
+}
+
 @media (prefers-color-scheme: dark) {
   .improve-section {
+    border-top-color: var(--dark-border);
+  }
+}
+
+#history {
+  border-top: 1px solid var(--light-border);
+  padding: 20px 0 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  #history {
     border-top-color: var(--dark-border);
   }
 }

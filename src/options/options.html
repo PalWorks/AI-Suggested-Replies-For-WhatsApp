@@ -11,49 +11,46 @@
 
   <div id="options-container">
     <form id="options-form">
-    <fieldset id="provider-settings">
-      <legend>Provider Settings</legend>
-      <div class="provider-model-row">
-        <div class="provider-col">
-          <label for="api-choice">Provider</label>
-          <select id="api-choice" name="api-choice">
-            <option value="openai">OpenAI</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="mistral">Mistral</option>
-          </select>
+      <fieldset id="provider-settings">
+        <legend>Provider Settings</legend>
+        <div class="provider-model-row">
+          <div class="provider-col">
+            <label for="api-choice">Provider</label>
+            <select id="api-choice" name="api-choice">
+              <option value="openai">OpenAI</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="mistral">Mistral</option>
+            </select>
+          </div>
+          <div class="model-col">
+            <label for="model-name">Model Name</label>
+            <input type="text" id="model-name" name="model-name" placeholder="gpt-3.5-turbo">
+            <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
+          </div>
         </div>
-        <div class="model-col">
-          <label for="model-name">Model Name</label>
-          <input type="text" id="model-name" name="model-name" placeholder="gpt-3.5-turbo">
+        <label for="api-key">API Key</label>
+        <div class="input-group">
+          <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
+          <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">👁</button>
         </div>
-      </div>
-      <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
-      <label for="api-key">API Key</label>
-      <div class="input-group">
-        <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
-        <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">👁</button>
         <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
+      </fieldset>
+
+      <fieldset id="system-instructions">
+        <legend>System Instructions</legend>
+        <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
+      </fieldset>
+
+      <div id="improve-section" class="improve-section">
+        <label for="show-advanced-improve">
+          <input type="checkbox" id="show-advanced-improve">
+          Show Advanced options for Improve-My-Response button
+        </label>
       </div>
-    </fieldset>
 
-    <fieldset id="system-instructions">
-      <legend>System Instructions</legend>
-      <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
-    </fieldset>
-
-    <div id="improve-section" class="improve-section">
-      <label for="show-advanced-improve">
-        <input type="checkbox" id="show-advanced-improve">
-        Show Advanced options for Improve-My-Response button
-      </label>
-    </div>
-
-    <button type="submit">Save</button>
-    <div class="toast" style="display:none">
-      <p>Options saved successfully!</p>
-    </div>
-  </form>
+      <button type="submit" id="save-button">Save</button>
+    </form>
 
   <div id="history">
     <h2>LLM Call History</h2>
