@@ -6,17 +6,109 @@
 // Document Object Model (DOM).
 // You can also pass information to the parent extension.
 
-// We execute this script by making an entry in manifest.json file
-// under `content_scripts` property
+// Injected by background.js using chrome.scripting.executeScript
 
 // For more information on Content Scripts,
 // See https://developer.chrome.com/extensions/content_scripts
 
-// const link = document.createElement('link');
-// link.rel = 'stylesheet';
-// link.type = 'text/css';
-// link.href = chrome.runtime.getURL('content.css');
-// document.head.appendChild(link);
+const style = document.createElement('style');
+style.textContent = `
+/* Theme variables */
+:root {
+  --gpt-btn-bg: #007bff;
+  --gpt-btn-text: #fff;
+  --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
+  --gpt-btn-spinner-top: #fff;
+  --message-spinner-border: rgba(0, 0, 0, 0.1);
+  --message-spinner-top: #54656F;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gpt-btn-bg: #0056b3;
+    --gpt-btn-text: #fff;
+    --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
+    --gpt-btn-spinner-top: #fff;
+    --message-spinner-border: rgba(255, 255, 255, 0.1);
+    --message-spinner-top: #d1d7db;
+  }
+}
+
+.gptbtn {
+  position: relative;
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  color: var(--gpt-btn-text);
+  background-color: var(--gpt-btn-bg);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gptbtn .gptbtn-text {
+  z-index: 1;
+}
+
+.gptbtn .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--gpt-btn-spinner-border);
+  border-top-color: var(--gpt-btn-spinner-top);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gptbtn.loading .gptbtn-text {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gptbtn.loading .spinner {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.selectable-text.copyable-text {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.selectable-text.copyable-text .spinner {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--message-spinner-border);
+  border-top-color: var(--message-spinner-top);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 8px auto;
+  position: relative;
+  transform-origin: center;
+}
+`;
+document.head.appendChild(style);
 
 // let apiKey;
 let sendHistory = false;

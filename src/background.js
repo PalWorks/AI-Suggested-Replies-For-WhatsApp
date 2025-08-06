@@ -2,6 +2,8 @@
 import {b64ToBuf, fetchWithRetry} from './utils.js';
 import {logToGitHub} from './logger.js';
 
+const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'contentScript.js'];
+
 let decryptedApiKey = null;
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -142,6 +144,24 @@ function initExtension() {
       return true;
     } else if (request.message === 'providerChanged' && request.providerUrl) {
       chrome.permissions.request({origins: [request.providerUrl]});
+    }
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('https://web.whatsapp.com/')) {
+      chrome.scripting.executeScript({
+        target: {tabId},
+        files: CONTENT_SCRIPTS
+      });
+    }
+  });
+
+  chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
+    for (const tab of tabs) {
+      chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        files: CONTENT_SCRIPTS
+      });
     }
   });
 }
