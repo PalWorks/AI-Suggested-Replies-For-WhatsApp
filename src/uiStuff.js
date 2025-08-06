@@ -1,8 +1,7 @@
 function createGptButton() {
   const gptButton = document.createElement('button');
   gptButton.type = 'button';
-  gptButton.innerHTML = '<span class="gptbtn-text">AI Reply</span>\n' +
-    '  <span class="spinner"></span>\n';
+  gptButton.innerHTML = '<span class="gptbtn-text">AI Reply</span><span class="spinner"></span>';
   gptButton.className = 'gptbtn';
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

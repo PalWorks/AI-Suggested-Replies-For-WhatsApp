@@ -55,6 +55,8 @@ style.textContent = `
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .gptbtn .gptbtn-text {
@@ -87,11 +89,10 @@ style.textContent = `
   pointer-events: auto;
 }
 
-.selectable-text.copyable-text {
+.gpt-message {
   min-height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  white-space: pre-wrap;
 }
 
 @keyframes spin {
@@ -103,18 +104,7 @@ style.textContent = `
   }
 }
 
-.selectable-text.copyable-text .spinner {
-  display: block;
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--message-spinner-border);
-  border-top-color: var(--message-spinner-top);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  margin: 8px auto;
-  position: relative;
-  transform-origin: center;
-}
+/* message spinner styles are defined inline when used */
 `;
 document.head.appendChild(style);
 
@@ -204,53 +194,7 @@ async function createPrompt(lastIsMine, chatHistoryShort) {
 }
 
 function extractConversation(node) {
-    return parseHtml(node);
-}
-
-function showPromptEditor() {
-  chrome.storage.local.get({toneOfVoice: 'Use Emoji and my own writing style. Be concise.'}, ({toneOfVoice}) => {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '20%';
-    overlay.style.left = '50%';
-    overlay.style.transform = 'translateX(-50%)';
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    overlay.style.background = prefersDark ? '#1e1e1e' : '#fff';
-    overlay.style.color = prefersDark ? '#fff' : '#000';
-    overlay.style.border = prefersDark ? '1px solid #444' : '1px solid #ccc';
-    overlay.style.padding = '10px';
-    overlay.style.zIndex = '10000';
-    const textarea = document.createElement('textarea');
-    textarea.rows = 4;
-    textarea.style.width = '200px';
-    if (prefersDark) {
-      textarea.style.background = '#2b2b2b';
-      textarea.style.color = '#fff';
-      textarea.style.border = '1px solid #444';
-    }
-    textarea.value = toneOfVoice;
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = 'Reset to default';
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
-    saveBtn.addEventListener('click', () => {
-      chrome.storage.local.set({toneOfVoice: textarea.value});
-      document.body.removeChild(overlay);
-    });
-    resetBtn.addEventListener('click', () => {
-      textarea.value = 'Use Emoji and my own writing style. Be concise.';
-    });
-    cancelBtn.addEventListener('click', () => {
-      document.body.removeChild(overlay);
-    });
-    overlay.appendChild(textarea);
-    overlay.appendChild(saveBtn);
-    overlay.appendChild(resetBtn);
-    overlay.appendChild(cancelBtn);
-    document.body.appendChild(overlay);
-  });
+  return parseHtml(node);
 }
 
 let globalGptButtonObject;
@@ -311,7 +255,6 @@ function injectUI(mainNode) {
   }
   globalMainNode = mainNode;
   readData();
-  footer.querySelectorAll('.selectable-text.copyable-text')[0];
 // Create a new footer element with the same HTML content as the original
     const {
         newFooter,
@@ -320,17 +263,11 @@ function injectUI(mainNode) {
       } = createGptFooter(footer, mainNode);
     globalGptButtonObject = gptButtonObject;
     newFooterParagraph = newFooter.querySelectorAll('.selectable-text.copyable-text')[0];
+    newFooterParagraph.classList.add('gpt-message');
     maybeShowOptionsHintInResponseField();
     copyButton.addEventListener('click', () => {
         copyToSendField(newFooterParagraph.textContent);
     });
-    const buttonContainer = copyButton.parentNode;
-    const editButton = document.createElement('button');
-    editButton.textContent = 'Edit Prompt';
-    editButton.style.marginRight = '10px';
-    editButton.style.fontSize = '12px';
-    editButton.addEventListener('click', showPromptEditor);
-    buttonContainer.insertBefore(editButton, copyButton);
     const privacyNotice = document.createElement('div');
     privacyNotice.style.fontSize = '10px';
     privacyNotice.style.color = '#54656F';
@@ -417,11 +354,8 @@ initExtension();
 async function writeTextToSuggestionField(response, isLoading = false) {
     try {
         if (isLoading) {
-            newFooterParagraph.style.whiteSpace = 'nowrap';
-            newFooterParagraph.style.display = 'flex';
-            newFooterParagraph.style.alignItems = 'center';
             newFooterParagraph.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: inline-block; vertical-align: middle;">
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:8px auto;">
                     <style>
                         .spinner {
                             transform-origin: center;
@@ -435,9 +369,7 @@ async function writeTextToSuggestionField(response, isLoading = false) {
                     <circle class="spinner" cx="12" cy="12" r="10" stroke="#54656F" stroke-width="3" fill="none" stroke-dasharray="15, 85" stroke-dashoffset="0"/>
                 </svg>`;
         } else {
-            newFooterParagraph.style.whiteSpace = 'normal';
-            newFooterParagraph.style.display = 'block';
-            newFooterParagraph.innerHTML = response;
+            newFooterParagraph.textContent = response;
         }
   } catch (e) {
     console.error(e);
