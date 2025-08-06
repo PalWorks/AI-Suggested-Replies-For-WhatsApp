@@ -1,7 +1,7 @@
 function createGptButton() {
   const gptButton = document.createElement('button');
   gptButton.type = 'button';
-  gptButton.innerHTML = '<span class="gptbtn-text">Generate Response</span>\n' +
+  gptButton.innerHTML = '<span class="gptbtn-text">AI Reply</span>\n' +
     '  <span class="spinner"></span>\n';
   gptButton.className = 'gptbtn';
 
