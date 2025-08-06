@@ -60,6 +60,15 @@ style.textContent = `
   flex-shrink: 0;
 }
 
+.gptbtn .gptbtn-text {
+  display: inline-block; /* Allows width to be reserved when hidden */
+}
+
+/* Keep label space reserved so button size stays consistent */
+.gptbtn.loading .gptbtn-text {
+  visibility: hidden; /* Hide label but retain width */
+}
+
 .gptbtn .spinner {
   width: 20px;
   height: 20px;
@@ -67,11 +76,11 @@ style.textContent = `
   border-top-color: var(--gpt-btn-spinner-top);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  position: absolute; /* Overlay spinner in the center */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: none; /* Only visible while loading */
-}
-
-.gptbtn.loading .gptbtn-text {
-  display: none; /* Hide label when loading */
 }
 
 .gptbtn.loading .spinner {
@@ -371,7 +380,14 @@ function injectUI(mainNode) {
   // Watch input changes to toggle the "Improve my response" button
   const textarea = mainNode.querySelector('[contenteditable="true"]');
   if (textarea) {
-    textarea.addEventListener('input', updateImproveButtonState);
+    // React to typing, pasting, and other edits in real time
+    ['input', 'keyup', 'paste', 'cut'].forEach(evt =>
+      textarea.addEventListener(evt, updateImproveButtonState)
+    );
+    // Observe programmatic changes to the draft text
+    const observer = new MutationObserver(updateImproveButtonState);
+    observer.observe(textarea, {childList: true, characterData: true, subtree: true});
+    textarea.__improveObserver = observer; // keep reference to avoid GC
     updateImproveButtonState();
   }
 }
