@@ -134,10 +134,12 @@ function readData() {
       {
         apiKey: '',
         sendHistory: 'manual',
+        showAdvancedImprove: false,
       },
       result => {
         apiKey = result.apiKey;
         sendHistory = result.sendHistory;
+        showAdvancedImprove = result.showAdvancedImprove;
       }
     );
   } catch (e) {
@@ -200,6 +202,7 @@ function extractConversation(node) {
 let globalGptButtonObject;
 let globalImproveButtonObject;
 let activeButtonObject; // Tracks which button initiated the current request
+let showAdvancedImprove = false;
 
 // Helper to ask for user consent before sending messages to the LLM
 function withPermission(callback) {
@@ -241,30 +244,54 @@ function getDraftText() {
 // Handles "Improve my response" button clicks
 async function improveButtonClicked() {
   const draft = getDraftText();
-  if (!draft) {
+  if (!showAdvancedImprove && !draft) {
     if (showToast) showToast('Please provide an input to improve');
     return;
   }
   withPermission(async () => {
     const {chatHistoryShort} = extractConversation(globalMainNode);
-    const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
-    const result = await new Promise(resolve => {
-      chrome.storage.local.get({
-        toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
-        promptTemplate: DEFAULT_PROMPT
-      }, resolve);
-    });
-    const tone = result.toneOfVoice;
-    const template = result.promptTemplate;
-    const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\nTone of voice: ${tone}\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
-    activeButtonObject = globalImproveButtonObject;
-    activeButtonObject.setBusy(true);
-    streamingText = '';
-    writeTextToSuggestionField('', true);
-    await chrome.runtime.sendMessage({
-      message: 'sendChatToGpt',
-      prompt
-    });
+    if (showAdvancedImprove) {
+      const dialogResult = await showImproveDialog(chatHistoryShort, draft);
+      if (!dialogResult) {
+        return;
+      }
+      const {draft: userDraft, style, tone, instructions} = dialogResult;
+      const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
+      const {promptTemplate} = await new Promise(resolve => {
+        chrome.storage.local.get({promptTemplate: DEFAULT_PROMPT}, resolve);
+      });
+      const parts = [`${promptTemplate}`, `Response style: ${style}`, `Tone: ${tone}`];
+      if (instructions) parts.push(`Additional instructions: ${instructions}`);
+      parts.push(`\nChat history:\n${chatHistoryShort}\n\nMy draft:\n${userDraft}`);
+      const prompt = parts.join('\n');
+      activeButtonObject = globalImproveButtonObject;
+      activeButtonObject.setBusy(true);
+      streamingText = '';
+      writeTextToSuggestionField('', true);
+      await chrome.runtime.sendMessage({
+        message: 'sendChatToGpt',
+        prompt
+      });
+    } else {
+      const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
+      const result = await new Promise(resolve => {
+        chrome.storage.local.get({
+          toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
+          promptTemplate: DEFAULT_PROMPT
+        }, resolve);
+      });
+      const tone = result.toneOfVoice;
+      const template = result.promptTemplate;
+      const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\nTone of voice: ${tone}\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
+      activeButtonObject = globalImproveButtonObject;
+      activeButtonObject.setBusy(true);
+      streamingText = '';
+      writeTextToSuggestionField('', true);
+      await chrome.runtime.sendMessage({
+        message: 'sendChatToGpt',
+        prompt
+      });
+    }
   });
 }
 
