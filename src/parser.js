@@ -4,31 +4,11 @@
     showToast = m.showToast;
   });
 
-  class LinkedSet {
-  constructor() {
-    this.set = new Set();
-    this.array = [];
-  }
-
-  add(value) {
-    if (!this.set.has(value)) {
-      this.set.add(value);
-      this.array.push(value);
-    }
-  }
-
-  getPosition(value) {
-    return this.array.indexOf(value);
-  }
-}
-
 function parseHtml(main) {
   try {
     const main2 = main;
     const chatHistory = [];
     let msgContainers = main2.querySelectorAll('.message-out, .message-in');
-
-    const linkedSet = new LinkedSet();
     msgContainers = Array.from(msgContainers).slice(-10);
     msgContainers.forEach(el => {
       let messageStringCollector = '';
@@ -39,10 +19,9 @@ function parseHtml(main) {
           if (el.closest('.message-out') !== null) {
             messageStringCollector += 'Me: ';
           } else {
-            let contactName = messageLabel.replace(/\[.*?\]\s*/, '').slice(0, -2);
-            linkedSet.add(contactName);
-            const contactNumber = linkedSet.getPosition(contactName) + 1;
-            messageStringCollector += contactNumber + ': ';
+            // Extract the sender's name and show it directly instead of a number
+            const contactName = messageLabel.replace(/\[.*?\]\s*/, '').slice(0, -2);
+            messageStringCollector += contactName + ': ';
           }
         } else {
           const messageContent = getTextWithEmojis(el);
