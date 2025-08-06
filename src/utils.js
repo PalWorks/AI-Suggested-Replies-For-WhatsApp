@@ -47,3 +47,39 @@ export async function fetchWithRetry(
     }
   }
 }
+
+export function showToast(message) {
+  if (typeof window !== 'undefined' && window.document && document.body) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'rgba(0, 0, 0, 0.8)';
+    toast.style.color = '#fff';
+    toast.style.padding = '8px 12px';
+    toast.style.borderRadius = '4px';
+    toast.style.zIndex = '2147483647';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    try {
+      chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        if (tabs[0] && tabs[0].id !== undefined) {
+          chrome.tabs.sendMessage(tabs[0].id, {type: 'showToast', message});
+        }
+      });
+    } catch (e) {
+      // ignore messaging errors
+    }
+  } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+    try {
+      chrome.runtime.sendMessage({type: 'showToast', message});
+    } catch (e) {
+      // ignore runtime errors
+    }
+  } else {
+    console.log(message);
+  }
+}

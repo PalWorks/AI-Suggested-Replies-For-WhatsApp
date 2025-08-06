@@ -1,6 +1,11 @@
 // contentScript.js - version 2025-08-05T00:44:54Z
 'use strict';
 
+let showToast;
+import(chrome.runtime.getURL('utils.js')).then(m => {
+  showToast = m.showToast;
+});
+
 // Content script file will run in the context of web page.
 // With content script you can manipulate the web pages using
 // Document Object Model (DOM).
@@ -131,26 +136,31 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 function readData() {
-    try {
-        chrome.storage.local.get({
-            apiKey: '',
-            sendHistory: 'manual',
-        }, (result) => {
-            apiKey = result.apiKey;
-            sendHistory = result.sendHistory;
-        })
-    } catch (e) {
-        console.error('Error reading storage:', e);
-    }
+  try {
+    chrome.storage.local.get(
+      {
+        apiKey: '',
+        sendHistory: 'manual',
+      },
+      result => {
+        apiKey = result.apiKey;
+        sendHistory = result.sendHistory;
+      }
+    );
+  } catch (e) {
+    console.error('Error reading storage:', e);
+    if (showToast) showToast('Error reading storage');
+  }
 }
 
 async function copyToSendField(text) {
-    try {
-        const textareaEl = globalMainNode.querySelector('[contenteditable="true"]');
-        textareaEl.focus();
-        document.execCommand('insertText', false, text);
-    } catch (e) {
-    }
+  try {
+    const textareaEl = globalMainNode.querySelector('[contenteditable="true"]');
+    textareaEl.focus();
+    document.execCommand('insertText', false, text);
+  } catch (e) {
+    if (showToast) showToast('Failed to copy text');
+  }
 }
 
 let delayTimer;
@@ -420,28 +430,32 @@ async function writeTextToSuggestionField(response, isLoading = false) {
             newFooterParagraph.style.display = 'block';
             newFooterParagraph.innerHTML = response;
         }
-    } catch (e) {
-        console.error(e);
-    }
+  } catch (e) {
+    console.error(e);
+    if (showToast) showToast('Failed to update suggestion');
+  }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'token') {
-        streamingText += request.data;
-        writeTextToSuggestionField(streamingText);
-    } else if (request.type === 'done') {
-        globalGptButtonObject.setBusy(false);
-    } else if (request.type === 'error') {
-        globalGptButtonObject.setBusy(false);
-        writeTextToSuggestionField(request.data || 'Failed to generate reply');
-    } else if (request.message === 'gptResponse') {
-        const response = request.response;
-        globalGptButtonObject.setBusy(false);
-        if (response.error !== null && response.error !== undefined) {
-            writeTextToSuggestionField(response.error.message);
-            return;
-        }
-        writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
+  if (request.type === 'token') {
+    streamingText += request.data;
+    writeTextToSuggestionField(streamingText);
+  } else if (request.type === 'done') {
+    globalGptButtonObject.setBusy(false);
+  } else if (request.type === 'error') {
+    globalGptButtonObject.setBusy(false);
+    writeTextToSuggestionField(request.data || 'Failed to generate reply');
+    if (showToast) showToast(request.data || 'Failed to generate reply');
+  } else if (request.type === 'showToast') {
+    if (showToast) showToast(request.message);
+  } else if (request.message === 'gptResponse') {
+    const response = request.response;
+    globalGptButtonObject.setBusy(false);
+    if (response.error !== null && response.error !== undefined) {
+      writeTextToSuggestionField(response.error.message);
+      return;
     }
-    return true;
+    writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
+  }
+  return true;
 });
