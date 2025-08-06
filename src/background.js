@@ -140,6 +140,8 @@ function initExtension() {
     } else if (request.message === 'sendChatToGpt') {
       sendLLM(request.prompt, sender.tab.id);
       return true;
+    } else if (request.message === 'providerChanged' && request.providerUrl) {
+      chrome.permissions.request({origins: [request.providerUrl]});
     }
   });
 }
