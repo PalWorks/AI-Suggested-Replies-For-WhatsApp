@@ -1,14 +1,10 @@
 /* options.css */
 
 /* General styling */
-
-{
-    box-sizing: border-box
-;
-    margin: 0
-;
-    padding: 0
-;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 body {
     font-family: Arial, sans-serif;
@@ -39,7 +35,8 @@ label {
     font-weight: bold;
 }
 
-input[type="password"] {
+input[type="password"],
+input[type="text"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
@@ -157,7 +154,7 @@ button[type="submit"]:hover {
         background-color: #1e1e1e;
     }
     input[type="password"],
-    .input-with-link input[type="text"] {
+    input[type="text"] {
         background-color: #2b2b2b;
         color: #eee;
         border: 1px solid #555;

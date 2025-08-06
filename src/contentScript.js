@@ -1,6 +1,8 @@
 (() => {
   // contentScript.js - version 2025-08-05T00:44:54Z
   'use strict';
+  if (window.__gptContentScriptLoaded) return;
+  window.__gptContentScriptLoaded = true;
 
   let showToast;
   import(chrome.runtime.getURL('utils.js')).then(m => {
@@ -177,6 +179,7 @@ function triggerEvent() {
 
 let globalMainNode;
 let newFooterParagraph;
+let uiInjected = false;
 
 async function createPrompt(lastIsMine, chatHistoryShort) {
     let promptCenter;
@@ -303,11 +306,13 @@ chrome.storage.local.onChanged.addListener((changes) => {
 });
 
 function injectUI(addedNode) {
-    const mainNode = addedNode;
-    globalMainNode = addedNode;
-    readData();
-    const footer = mainNode.getElementsByTagName('footer')[0];
-    footer.querySelectorAll('.selectable-text.copyable-text')[0];
+  if (uiInjected) return;
+  uiInjected = true;
+  const mainNode = addedNode;
+  globalMainNode = addedNode;
+  readData();
+  const footer = mainNode.getElementsByTagName('footer')[0];
+  footer.querySelectorAll('.selectable-text.copyable-text')[0];
 // Create a new footer element with the same HTML content as the original
     const {
         newFooter,
@@ -399,11 +404,15 @@ const observer = new MutationObserver(function (mutations) {
 let confirmVisible = false;
 
 function initExtension() {
-    readData();
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+  readData();
+  const main = document.getElementById('main');
+  if (main) {
+    injectUI(main);
+  }
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 }
 
 initExtension();
