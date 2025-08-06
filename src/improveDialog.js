@@ -8,6 +8,7 @@ function showImproveDialog(chatHistory, draft) {
     improveDialogVisible = true;
     const overlay = document.createElement('div');
     overlay.id = 'improveDialogOverlay';
+    // Build dialog markup styled like native WhatsApp popups
     overlay.innerHTML = `
       <style>
         #improveDialogOverlay {
@@ -21,16 +22,16 @@ function showImproveDialog(chatHistory, draft) {
           justify-content: center;
           background: rgba(11, 20, 26, 0.85);
           z-index: 9999;
-          font-family: var(--font-default, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
+          font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
         }
         #improveDialog {
           background: var(--layer-background-default, #fff);
           border-radius: 12px;
           box-shadow: 0 4px 24px rgba(11, 20, 26, 0.2);
-          width: min(90%, 420px);
+          width: min(90%, 560px);
           max-height: 90%;
           overflow-y: auto;
-          padding: 24px;
+          padding: 32px;
           position: relative;
         }
         #improveDialog h3 {
@@ -39,8 +40,7 @@ function showImproveDialog(chatHistory, draft) {
           font-size: 20px;
           font-weight: 500;
         }
-        #improveDialog textarea,
-        #improveDialog select {
+        #improveDialog textarea {
           width: 100%;
           margin-bottom: 12px;
           border: 1px solid var(--border-stronger, #d1d7db);
@@ -49,9 +49,40 @@ function showImproveDialog(chatHistory, draft) {
           font-size: 14px;
           color: var(--primary-strong, #111b21);
           background: var(--surface, #fff);
-        }
-        #improveDialog textarea {
           resize: vertical;
+        }
+        #improve-history {
+          min-height: 160px; /* show at least 8 lines */
+        }
+        .pill-group {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .pill {
+          background: #fff;
+          border: 1px solid #e0e0e0;
+          border-radius: 16px;
+          padding: 6px 12px;
+          cursor: pointer;
+          box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+          font-size: 14px;
+          color: var(--primary-strong, #111b21);
+        }
+        .pill:hover,
+        .pill:focus {
+          background: #f0f2f5;
+        }
+        .pill.selected {
+          background: #25D366;
+          color: #fff;
+          border: none;
+          font-weight: 700;
+          box-shadow: none;
+        }
+        .pill.selected:hover,
+        .pill.selected:focus {
+          background: #1ebe5d;
         }
         #improveDialog-buttons {
           display: flex;
@@ -59,33 +90,37 @@ function showImproveDialog(chatHistory, draft) {
           gap: 8px;
           margin-top: 16px;
         }
-        #improve-generate,
         #improve-cancel {
-          border: none;
-          border-radius: 8px;
+          background: #fff;
+          border: 1px solid #d1d7db;
+          border-radius: 16px;
           padding: 8px 16px;
           font-size: 14px;
+          color: var(--primary-strong, #111b21);
           cursor: pointer;
         }
-        #improve-generate {
-          background: var(--button-primary, #00a884);
+        #improve-cancel:hover,
+        #improve-cancel:focus {
+          background: #f0f2f5;
+        }
+        #improve-cancel:active {
+          background: #25D366;
           color: #fff;
+          font-weight: 700;
+          border: none;
         }
-        #improve-cancel {
-          background: var(--button-secondary, #d1d7db);
-          color: var(--primary-strong, #111b21);
+        #improve-generate {
+          background: #25D366;
+          border: none;
+          border-radius: 16px;
+          padding: 8px 16px;
+          font-size: 14px;
+          color: #fff;
+          cursor: pointer;
         }
-        #improve-generate:hover {
-          background: var(--button-primary-hover, #008069);
-        }
-        #improve-cancel:hover {
-          background: var(--button-secondary-hover, #c3c8cd);
-        }
-        #improve-generate:focus,
-        #improve-cancel:focus,
-        #improveDialog-close:focus {
-          outline: 2px solid var(--focus-ring, #00a884);
-          outline-offset: 2px;
+        #improve-generate:hover,
+        #improve-generate:focus {
+          background: #1ebe5d;
         }
         #improveDialog-close {
           position: absolute;
@@ -99,7 +134,7 @@ function showImproveDialog(chatHistory, draft) {
           color: var(--icon-secondary, #54656f);
         }
       </style>
-      <div id="improveDialog">
+      <div id="improveDialog" role="dialog" aria-modal="true">
         <button id="improveDialog-close" aria-label="Close">&times;</button>
         <h3>Improve Response</h3>
         <label for="improve-history">Chat history</label>
@@ -107,23 +142,23 @@ function showImproveDialog(chatHistory, draft) {
         <label for="improve-draft">Your draft</label>
         <textarea id="improve-draft"></textarea>
         <label for="improve-style">Response Style</label>
-        <select id="improve-style">
-          <option value="Neutral">Neutral</option>
-          <option value="Interested / Positive">Interested / Positive</option>
-          <option value="Not Interested">Not Interested</option>
-          <option value="Negative">Negative</option>
-          <option value="Supportive">Supportive</option>
-          <option value="Inquisitive">Inquisitive</option>
-        </select>
+        <div id="improve-style" class="pill-group" role="radiogroup">
+          <button class="pill selected" role="radio" aria-selected="true" data-value="Neutral">Neutral</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Interested / Positive">Interested / Positive</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Not Interested">Not Interested</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Negative">Negative</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Supportive">Supportive</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Inquisitive">Inquisitive</button>
+        </div>
         <label for="improve-tone">Tone</label>
-        <select id="improve-tone">
-          <option value="Professional">Professional</option>
-          <option value="Polite">Polite</option>
-          <option value="Friendly">Friendly</option>
-          <option value="Casual">Casual</option>
-          <option value="Straightforward">Straightforward</option>
-          <option value="Persuasive">Persuasive</option>
-        </select>
+        <div id="improve-tone" class="pill-group" role="radiogroup">
+          <button class="pill selected" role="radio" aria-selected="true" data-value="Professional">Professional</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Polite">Polite</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Friendly">Friendly</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Casual">Casual</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Straightforward">Straightforward</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Persuasive">Persuasive</button>
+        </div>
         <label for="improve-instructions">Additional instructions</label>
         <textarea id="improve-instructions" placeholder="e.g., ask follow-up questions"></textarea>
         <div id="improveDialog-buttons">
@@ -142,6 +177,23 @@ function showImproveDialog(chatHistory, draft) {
     const cancelBtn = dialog.querySelector('#improve-cancel');
     const closeBtn = dialog.querySelector('#improveDialog-close');
 
+    // helper to handle pill selection for response style and tone
+    function setupPills(groupSelector) {
+      const group = dialog.querySelector(groupSelector);
+      group.addEventListener('click', e => {
+        if (e.target.classList.contains('pill')) {
+          group.querySelectorAll('.pill').forEach(btn => {
+            btn.classList.remove('selected');
+            btn.setAttribute('aria-selected', 'false');
+          });
+          e.target.classList.add('selected');
+          e.target.setAttribute('aria-selected', 'true');
+        }
+      });
+    }
+    setupPills('#improve-style');
+    setupPills('#improve-tone');
+
     function cleanup() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       improveDialogVisible = false;
@@ -150,8 +202,8 @@ function showImproveDialog(chatHistory, draft) {
     generateBtn.addEventListener('click', () => {
       const result = {
         draft: dialog.querySelector('#improve-draft').value,
-        style: dialog.querySelector('#improve-style').value,
-        tone: dialog.querySelector('#improve-tone').value,
+        style: dialog.querySelector('#improve-style .pill.selected').dataset.value,
+        tone: dialog.querySelector('#improve-tone .pill.selected').dataset.value,
         instructions: dialog.querySelector('#improve-instructions').value
       };
       cleanup();

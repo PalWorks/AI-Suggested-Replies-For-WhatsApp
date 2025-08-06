@@ -340,35 +340,7 @@ function injectUI(mainNode) {
     copyButton.addEventListener('click', () => {
         copyToSendField(newFooterParagraph.textContent);
     });
-    const privacyNotice = document.createElement('div');
-    privacyNotice.style.fontSize = '10px';
-    privacyNotice.style.color = '#54656F';
-    privacyNotice.style.position = 'relative';
-  privacyNotice.textContent = 'Messages are sent to the configured AI provider for processing ';
-    const infoIcon = document.createElement('span');
-    infoIcon.textContent = 'ℹ️';
-    infoIcon.style.cursor = 'pointer';
-    privacyNotice.appendChild(infoIcon);
-    const tooltip = document.createElement('div');
-    tooltip.style.position = 'absolute';
-    tooltip.style.bottom = '100%';
-    tooltip.style.left = '0';
-    tooltip.style.background = '#fff';
-    tooltip.style.border = '1px solid #ccc';
-    tooltip.style.padding = '4px';
-    tooltip.style.display = 'none';
-    tooltip.style.zIndex = '1000';
-    tooltip.style.fontSize = '10px';
-  tooltip.innerHTML = 'Messages are sent to your configured AI provider for processing. <a href="#" id="privacy-link">Options</a>';
-    privacyNotice.appendChild(tooltip);
-    infoIcon.addEventListener('mouseenter', () => tooltip.style.display = 'block');
-    infoIcon.addEventListener('mouseleave', () => tooltip.style.display = 'none');
-    tooltip.addEventListener('mouseleave', () => tooltip.style.display = 'none');
-    tooltip.querySelector('#privacy-link').addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.runtime.sendMessage({action: 'openOptionsPage'});
-    });
-    newFooter.appendChild(privacyNotice);
+    // Removed legacy privacy notice to streamline the suggestion bar UI
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
