@@ -1,7 +1,7 @@
 // Creates a styled action button used for AI features
-// label - text shown on the button
+// label - text shown on the button (defaults to "Suggest Response")
 // id - optional id for future lookups
-function createGptButton(label = 'AI Reply', id) {
+function createGptButton(label = 'Suggest Response', id) {
   const gptButton = document.createElement('button');
   gptButton.type = 'button';
   gptButton.id = id || '';
@@ -21,7 +21,6 @@ function createGptButton(label = 'AI Reply', id) {
 
   // Add hover effect
   gptButton.style.transition = 'background-color 0.3s ease';
-  gptButton.style.cursor = 'pointer';
 
   gptButton.addEventListener('mouseover', () => {
     gptButton.style.backgroundColor = hoverBg;
@@ -100,8 +99,8 @@ function createGptFooter(footer, mainNode) {
     const inputContainer = mainContainer.querySelector('.lexical-rich-text-input');
     const inputContainerRef = mainContainerRef.querySelector('.lexical-rich-text-input');
 
-    // Create GPT button and improvement button
-    const gptButtonObject = createGptButton('AI Reply', 'ai-reply-btn');
+    // Create primary "Suggest Response" button and improvement button
+    const gptButtonObject = createGptButton('Suggest Response', 'ai-reply-btn');
     const improveButtonObject = createGptButton('Improve my response', 'improve-response-btn');
 
     function createButtonContainer() {

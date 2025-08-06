@@ -44,11 +44,12 @@ style.textContent = `
 
 .gptbtn {
   position: relative;
-  display: inline-block;
+  display: inline-flex; /* Flex ensures spinner/text are centered */
+  align-items: center;
+  justify-content: center;
   padding: 12px 24px;
   font-size: 16px;
   font-weight: bold;
-  text-align: center;
   text-decoration: none;
   color: var(--gpt-btn-text);
   background-color: var(--gpt-btn-bg);
@@ -59,34 +60,27 @@ style.textContent = `
   flex-shrink: 0;
 }
 
-.gptbtn .gptbtn-text {
-  z-index: 1;
-}
-
 .gptbtn .spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
   border: 3px solid var(--gpt-btn-spinner-border);
   border-top-color: var(--gpt-btn-spinner-top);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
-  z-index: 0;
-  opacity: 0;
-  pointer-events: none;
+  display: none; /* Only visible while loading */
 }
 
 .gptbtn.loading .gptbtn-text {
-  opacity: 0;
-  pointer-events: none;
+  display: none; /* Hide label when loading */
 }
 
 .gptbtn.loading .spinner {
-  opacity: 1;
-  pointer-events: auto;
+  display: block; /* Show centered spinner */
+}
+
+.gptbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .gpt-message {
@@ -230,7 +224,7 @@ function withPermission(callback) {
   });
 }
 
-// Triggered when the main AI Reply button is clicked
+// Triggered when the main "Suggest Response" button is clicked
 function gptButtonClicked() {
   withPermission(() => {
     triggerEvent();
@@ -243,11 +237,20 @@ function getDraftText() {
   return textareaEl ? textareaEl.textContent.trim() : '';
 }
 
+// Enable/disable the "Improve my response" button based on input presence
+function updateImproveButtonState() {
+  const button = globalImproveButtonObject && globalImproveButtonObject.gptButton;
+  if (!button) return;
+  const hasText = getDraftText().length > 0;
+  button.disabled = !hasText;
+}
+
 // Handles "Improve my response" button clicks
 async function improveButtonClicked() {
   const draft = getDraftText();
   if (!showAdvancedImprove && !draft) {
-    if (showToast) showToast('Please provide an input to improve');
+    // Guard against empty input and inform the user why we cannot improve
+    if (showToast) showToast('Please enter a message to improve');
     return;
   }
   withPermission(async () => {
@@ -358,12 +361,19 @@ function injectUI(mainNode) {
     if (sendHistory === 'auto') {
         triggerEvent()
     }
-    const gptButton = gptButtonObject.gptButton;
-    gptButton.addEventListener('click', () => {
-        gptButtonClicked();
-    });
-    const improveButton = improveButtonObject.gptButton;
-    improveButton.addEventListener('click', improveButtonClicked);
+  const gptButton = gptButtonObject.gptButton;
+  gptButton.addEventListener('click', () => {
+    gptButtonClicked();
+  });
+  const improveButton = improveButtonObject.gptButton;
+  improveButton.addEventListener('click', improveButtonClicked);
+
+  // Watch input changes to toggle the "Improve my response" button
+  const textarea = mainNode.querySelector('[contenteditable="true"]');
+  if (textarea) {
+    textarea.addEventListener('input', updateImproveButtonState);
+    updateImproveButtonState();
+  }
 }
 
 const observer = new MutationObserver(mutations => {
