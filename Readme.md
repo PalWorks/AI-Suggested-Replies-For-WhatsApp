@@ -22,7 +22,7 @@ https://chrome.google.com/webstore/detail/chatgpt-answers-for-whats/bmbidjjfpkml
 1. Clone or download this repository to your local machine.
 2. Open Google Chrome and navigate to `chrome://extensions/`.
 3. Enable "Developer mode" in the top right corner.
-4. Click on "Load unpacked" and select the folder containing the downloaded repository files.
+4. Click on "Load unpacked" and select the `src` folder inside the repository.
 5. The extension will now appear in your Chrome extensions list, and you can start using it with WhatsApp Web.
 
 ## Usage
