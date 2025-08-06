@@ -11,6 +11,7 @@ function showImproveDialog(chatHistory, draft) {
     // Build dialog markup styled like native WhatsApp popups.
     // Theme colors are controlled via CSS variables that react to WhatsApp's
     // body.dark class and fall back to prefers-color-scheme.
+    // Response Style options and spacing updated to match new design guidelines.
     overlay.innerHTML = `
       <style>
         #improveDialogOverlay {
@@ -81,13 +82,18 @@ function showImproveDialog(chatHistory, draft) {
         }
         #improveDialog h3 {
           margin-top: 0;
-          margin-bottom: 16px;
+          margin-bottom: 24px; /* increased spacing for readability */
           font-size: 20px;
           font-weight: 500;
           color: var(--text-color);
         }
         #improveDialog label {
           color: var(--text-color);
+          display: block;
+          margin: 16px 0 8px; /* extra spacing above/below sections */
+        }
+        #improveDialog label:first-of-type {
+          margin-top: 0; /* keep chat history close to title */
         }
         #improveDialog textarea {
           width: 100%;
@@ -106,7 +112,7 @@ function showImproveDialog(chatHistory, draft) {
         .pill-group {
           display: flex;
           gap: 8px;
-          margin-bottom: 12px;
+          margin-bottom: 20px; /* more space below pill selectors */
         }
         .pill {
           background: var(--pill-bg);
@@ -190,11 +196,11 @@ function showImproveDialog(chatHistory, draft) {
         <textarea id="improve-history" readonly></textarea>
         <label for="improve-draft">Your draft</label>
         <textarea id="improve-draft"></textarea>
+        <!-- Response Style options updated: removed "Interested / Not Interested" -->
         <label for="improve-style">Response Style</label>
         <div id="improve-style" class="pill-group" role="radiogroup">
           <button class="pill selected" role="radio" aria-selected="true" data-value="Neutral">Neutral</button>
-          <button class="pill" role="radio" aria-selected="false" data-value="Interested / Positive">Interested / Positive</button>
-          <button class="pill" role="radio" aria-selected="false" data-value="Not Interested">Not Interested</button>
+          <button class="pill" role="radio" aria-selected="false" data-value="Positive">Positive</button>
           <button class="pill" role="radio" aria-selected="false" data-value="Negative">Negative</button>
           <button class="pill" role="radio" aria-selected="false" data-value="Supportive">Supportive</button>
           <button class="pill" role="radio" aria-selected="false" data-value="Inquisitive">Inquisitive</button>
