@@ -113,37 +113,15 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// let apiKey;
-let sendHistory = false;
-let apiKey = null;
 let streamingText = '';
 
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local') {
-    if (changes.apiKey) {
-      apiKey = changes.apiKey.newValue;
-    }
-    if (changes.sendHistory) {
-      const {oldValue, newValue} = changes.sendHistory;
-      sendHistory = newValue;
-      if (newValue === 'auto' && oldValue !== 'auto') {
-        triggerEvent();
-      }
-    }
-  }
-});
+
 
 function readData() {
   try {
     chrome.storage.local.get(
-      {
-        apiKey: '',
-        sendHistory: 'manual',
-        showAdvancedImprove: false,
-      },
+      {showAdvancedImprove: false},
       result => {
-        apiKey = result.apiKey;
-        sendHistory = result.sendHistory;
         showAdvancedImprove = result.showAdvancedImprove;
       }
     );
@@ -187,16 +165,14 @@ async function createPrompt(lastIsMine, chatHistoryShort) {
     }
 
     const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
-    const result = await new Promise((resolve) => {
+    const result = await new Promise(resolve => {
         chrome.storage.local.get({
-            toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
             promptTemplate: DEFAULT_PROMPT
         }, resolve);
     });
 
-    const tone_of_voice = result.toneOfVoice;
     const promptTemplate = result.promptTemplate;
-    const prompt = `${promptTemplate}\n${promptCenter}\nTone of voice: ${tone_of_voice}\n\nchat history:\n${chatHistoryShort}\n\n${mePrefix}`;
+    const prompt = `${promptTemplate}\n${promptCenter}\n\nchat history:\n${chatHistoryShort}\n\n${mePrefix}`;
     return prompt;
 }
 
@@ -290,13 +266,11 @@ async function improveButtonClicked() {
       const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
       const result = await new Promise(resolve => {
         chrome.storage.local.get({
-          toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
           promptTemplate: DEFAULT_PROMPT
         }, resolve);
       });
-      const tone = result.toneOfVoice;
       const template = result.promptTemplate;
-      const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\nTone of voice: ${tone}\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
+      const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
       activeButtonObject = globalImproveButtonObject;
       activeButtonObject.setBusy(true);
       streamingText = '';
@@ -326,10 +300,10 @@ function maybeShowOptionsHintInResponseField() {
     })
 }
 
-chrome.storage.local.onChanged.addListener((changes) => {
-    if (changes.sendHistory || changes.apiKey || changes.apiChoice) {
-        location.reload();
-    }
+chrome.storage.local.onChanged.addListener(changes => {
+  if (changes.apiKeys || changes.apiChoice) {
+    location.reload();
+  }
 });
 
 function injectUI(mainNode) {
@@ -367,9 +341,6 @@ function injectUI(mainNode) {
             prompt: prompt,
         });
     };
-    if (sendHistory === 'auto') {
-        triggerEvent()
-    }
   const gptButton = gptButtonObject.gptButton;
   gptButton.addEventListener('click', () => {
     gptButtonClicked();
@@ -401,9 +372,7 @@ const observer = new MutationObserver(mutations => {
       }
       mutation.addedNodes.forEach(node => {
         if (node.getAttribute && node.getAttribute('role') === 'row') {
-          if (sendHistory === 'auto') {
-            triggerEvent();
-          }
+          // auto-trigger removed
         }
       });
     }

@@ -4,7 +4,7 @@ import {logToGitHub} from './logger.js';
 
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
 
-let decryptedApiKey = null;
+let decryptedApiKeys = {};
 
 async function addHistory(entry) {
   const {history = []} = await chrome.storage.local.get({history: []});
@@ -16,34 +16,30 @@ async function addHistory(entry) {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.encryptedApiKey || changes.apiKey)) {
-    decryptedApiKey = null;
+  if (area === 'local' && changes.apiKeys) {
+    decryptedApiKeys = {};
   }
 });
 
-async function getApiKey() {
-  const {apiKey, encryptedApiKey, iv, encKey} = await chrome.storage.local.get({
-    apiKey: '',
-    encryptedApiKey: '',
-    iv: '',
-    encKey: ''
-  });
-  if (encryptedApiKey && iv && encKey) {
-    if (decryptedApiKey) return decryptedApiKey;
-    const key = await crypto.subtle.importKey('raw', b64ToBuf(encKey), 'AES-GCM', false, ['decrypt']);
-    const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(iv)}, key, b64ToBuf(encryptedApiKey));
-    decryptedApiKey = new TextDecoder().decode(decrypted);
-    return decryptedApiKey;
-  }
-  return apiKey;
+async function getApiKey(provider) {
+  const {apiKeys = {}, encKey = ''} = await chrome.storage.local.get({apiKeys: {}, encKey: ''});
+  const entry = apiKeys[provider];
+  if (!entry || !entry.encryptedKey || !entry.iv || !encKey) return '';
+  if (decryptedApiKeys[provider]) return decryptedApiKeys[provider];
+  const key = await crypto.subtle.importKey('raw', b64ToBuf(encKey), 'AES-GCM', false, ['decrypt']);
+  const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(entry.iv)}, key, b64ToBuf(entry.encryptedKey));
+  const decoded = new TextDecoder().decode(decrypted);
+  decryptedApiKeys[provider] = decoded;
+  return decoded;
 }
 
 
 async function sendLLM(prompt, tabId) {
   const startTime = Date.now();
   try {
-    const apiKey = await getApiKey();
-    const {apiChoice, modelChoice} = await chrome.storage.local.get({apiChoice: 'openai', modelChoice: 'gpt-4o-mini'});
+    const {apiChoice, modelNames = {}} = await chrome.storage.local.get({apiChoice: 'openai', modelNames: {}});
+    const modelChoice = modelNames[apiChoice] || getDefaultModel(apiChoice);
+    const apiKey = await getApiKey(apiChoice);
     if (!apiKey) {
       const msg = 'Please set your API key in the extension options.';
       chrome.tabs.sendMessage(tabId, {type: 'error', data: msg});
@@ -67,7 +63,7 @@ async function sendLLM(prompt, tabId) {
       headers['HTTP-Referer'] = 'https://web.whatsapp.com';
       headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
       body = JSON.stringify({...basePayload, model: modelChoice});
-    } else if (apiChoice === 'claude') {
+    } else if (apiChoice === 'anthropic') {
       url = 'https://api.anthropic.com/v1/messages';
       headers = {
         'Content-Type': 'application/json',
@@ -97,7 +93,7 @@ async function sendLLM(prompt, tabId) {
 
     let usage;
 
-    if (apiChoice === 'claude') {
+    if (apiChoice === 'anthropic') {
       const data = await response.json();
       const text = data.content?.[0]?.text || '';
       usage = data.usage;
@@ -164,6 +160,20 @@ async function sendLLM(prompt, tabId) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
     showToast(err.message);
     logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
+  }
+}
+
+function getDefaultModel(provider) {
+  switch (provider) {
+    case 'openrouter':
+    case 'openai':
+      return 'gpt-3.5-turbo';
+    case 'anthropic':
+      return 'claude-3-haiku-20240307';
+    case 'mistral':
+      return 'mistral-small';
+    default:
+      return '';
   }
 }
 

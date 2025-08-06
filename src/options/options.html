@@ -9,86 +9,47 @@
 <body>
 <h1>Options for GPT answer-suggestions</h1>
 
-<div id="options-container">
-  <!-- Warning moved to top for visibility (from V5) -->
-  <div id="chatHistoryWarningAlert" class="custom-alert">
-      <div class="alert-content">
-          <div>
-              <p>The last messages of your chat-conversation will be sent to the selected AI provider automatically,
-                 each time you select another user, <br> or when a message comes into the currently selected conversation.<br>
-                 They are kept and used according to that provider's API documentation and privacy policy.<br>
-                 This is less secure than the end-to-end encryption that
-                 <a href="https://faq.whatsapp.com/820124435853543/?helpref=uf_share" target="_blank">WhatsApp™ uses</a>.<br></p>
-          </div>
-          <div style="text-align: center;">
-              <p><strong><span style="color: red;">Beware to leave this off in sensitive conversations!</span></strong></p>
-              <button type="submit" id="hideHistoryWarningAlert">I understand</button>
-          </div>
+  <div id="options-container">
+    <form id="options-form">
+    <fieldset id="provider-settings">
+      <legend>Provider Settings</legend>
+      <label for="api-choice">Provider</label>
+      <select id="api-choice" name="api-choice">
+        <option value="openai">OpenAI</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="mistral">Mistral</option>
+      </select>
+      <label for="api-key">API Key</label>
+        <div class="input-group">
+        <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
+        <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">👁</button>
       </div>
-  </div>
-
-  <form id="options-form">
-    <fieldset>
-        <legend>Trigger chat answers from GPT:</legend>
-        <input type="radio" id="send-history-auto" name="send-history" value="auto">
-        <label for="send-history-auto">Automatically</label><br>
-        <input type="radio" id="send-history-manual" name="send-history" value="manual">
-        <label for="send-history-manual">Manually (Button)</label>
+      <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
+      <label for="model-name">Model Name</label>
+      <input type="text" id="model-name" name="model-name" placeholder="e.g. gpt-4o, claude-3-sonnet-20240229, mistral-large, etc.">
+      <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
     </fieldset>
 
     <fieldset>
-        <legend>Choose API:</legend>
-        <label for="api-choice">Provider:</label>
-        <select id="api-choice" name="api-choice">
-            <option value="openai">OpenAI</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="claude">Claude (Anthropic)</option>
-            <option value="mistral">Mistral</option>
-        </select>
-        <label for="model-choice" style="margin-top:10px;">Model:</label>
-        <select id="model-choice" name="model-choice">
-            <option value="gpt-4o">OpenAI gpt-4o</option>
-            <option value="gpt-4o-mini">OpenAI gpt-4o-mini</option>
-            <option value="gpt-4o-nano">OpenAI gpt-4o-nano</option>
-            <option value="gpt-3.5-turbo">OpenAI gpt-3.5-turbo</option>
-        </select>
+      <legend>System Instructions</legend>
+      <div>
+        <label for="prompt-template">System Instructions</label>
+        <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
+      </div>
     </fieldset>
 
     <fieldset>
-        <legend>API Key:</legend>
-        <label for="api-key">API Key:</label>
-        <input type="password" id="api-key" name="api-key">
-        <button type="button" id="toggle-api-key">Show</button>
-        <span id="api-key-status"></span>
-    </fieldset>
-
-    <fieldset>
-        <legend>Prompt:</legend>
-        <div>
-            <label for="prompt-template">Base prompt used to generate replies:</label>
-            <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
-        </div>
-    </fieldset>
-
-    <fieldset>
-        <legend>Tone of Voice:</legend>
-        <div>
-            <label for="tone-of-voice">This is only the tone of voice you want to use, it will be inserted into the system prompt:</label>
-            <input type="text" id="tone-of-voice" name="tone-of-voice">
-        </div>
-    </fieldset>
-
-    <fieldset>
-        <legend>Improve My Response</legend>
-        <label>
-            <input type="checkbox" id="show-advanced-improve">
-            Show Advanced options for Improve-My-Response button
-        </label>
+      <legend>Improve My Response</legend>
+      <label>
+        <input type="checkbox" id="show-advanced-improve">
+        Show Advanced options for Improve-My-Response button
+      </label>
     </fieldset>
 
     <button type="submit">Save</button>
     <div class="toast" style="display:none">
-        <p>Options saved successfully!</p>
+      <p>Options saved successfully!</p>
     </div>
   </form>
 
