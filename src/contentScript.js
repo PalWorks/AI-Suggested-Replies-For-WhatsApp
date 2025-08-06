@@ -179,7 +179,6 @@ function triggerEvent() {
 
 let globalMainNode;
 let newFooterParagraph;
-let uiInjected = false;
 
 async function createPrompt(lastIsMine, chatHistoryShort) {
     let promptCenter;
@@ -305,20 +304,20 @@ chrome.storage.local.onChanged.addListener((changes) => {
     }
 });
 
-function injectUI(addedNode) {
-  if (uiInjected) return;
-  uiInjected = true;
-  const mainNode = addedNode;
-  globalMainNode = addedNode;
-  readData();
+function injectUI(mainNode) {
   const footer = mainNode.getElementsByTagName('footer')[0];
+  if (!footer || mainNode.querySelector('.gptbtn')) {
+    return;
+  }
+  globalMainNode = mainNode;
+  readData();
   footer.querySelectorAll('.selectable-text.copyable-text')[0];
 // Create a new footer element with the same HTML content as the original
     const {
         newFooter,
         gptButtonObject,
         copyButton
-    } = createGptFooter(footer, addedNode);
+      } = createGptFooter(footer, mainNode);
     globalGptButtonObject = gptButtonObject;
     newFooterParagraph = newFooter.querySelectorAll('.selectable-text.copyable-text')[0];
     maybeShowOptionsHintInResponseField();
@@ -362,7 +361,7 @@ function injectUI(addedNode) {
     });
     newFooter.appendChild(privacyNotice);
     parseHtmlFunction = async function () {
-        const {chatHistoryShort, lastIsMine} = extractConversation(addedNode);
+        const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
         gptButtonObject.setBusy(true);
         streamingText = '';
@@ -382,23 +381,22 @@ function injectUI(addedNode) {
     });
 }
 
-const observer = new MutationObserver(function (mutations) {
-    mutations.forEach(function (mutation) {
-        // Check if a node was added
-        if (mutation.type === 'childList') {
-            // Get the added node's ID
-            mutation.addedNodes.forEach(function (addedNode) {
-                const addedNodeId = addedNode.id
-                if (addedNodeId === 'main') {
-                    injectUI(addedNode);
-                } else if (addedNode.role === 'row') { // when chat messages come in (or are sent out by me)
-                    if (sendHistory === 'auto') {
-                        triggerEvent()
-                    }
-                }
-            })
+const observer = new MutationObserver(mutations => {
+  mutations.forEach(mutation => {
+    if (mutation.type === 'childList') {
+      const main = document.getElementById('main');
+      if (main && !main.querySelector('.gptbtn')) {
+        injectUI(main);
+      }
+      mutation.addedNodes.forEach(node => {
+        if (node.getAttribute && node.getAttribute('role') === 'row') {
+          if (sendHistory === 'auto') {
+            triggerEvent();
+          }
         }
-    })
+      });
+    }
+  });
 });
 
 let confirmVisible = false;
