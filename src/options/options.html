@@ -13,39 +13,41 @@
     <form id="options-form">
     <fieldset id="provider-settings">
       <legend>Provider Settings</legend>
-      <label for="api-choice">Provider</label>
-      <select id="api-choice" name="api-choice">
-        <option value="openai">OpenAI</option>
-        <option value="openrouter">OpenRouter</option>
-        <option value="anthropic">Anthropic</option>
-        <option value="mistral">Mistral</option>
-      </select>
+      <div class="provider-model-row">
+        <div class="provider-col">
+          <label for="api-choice">Provider</label>
+          <select id="api-choice" name="api-choice">
+            <option value="openai">OpenAI</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="mistral">Mistral</option>
+          </select>
+        </div>
+        <div class="model-col">
+          <label for="model-name">Model Name</label>
+          <input type="text" id="model-name" name="model-name" placeholder="gpt-3.5-turbo">
+        </div>
+      </div>
+      <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
       <label for="api-key">API Key</label>
-        <div class="input-group">
+      <div class="input-group">
         <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
         <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">👁</button>
+        <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
       </div>
-      <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
-      <label for="model-name">Model Name</label>
-      <input type="text" id="model-name" name="model-name" placeholder="e.g. gpt-4o, claude-3-sonnet-20240229, mistral-large, etc.">
-      <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
     </fieldset>
 
-    <fieldset>
+    <fieldset id="system-instructions">
       <legend>System Instructions</legend>
-      <div>
-        <label for="prompt-template">System Instructions</label>
-        <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
-      </div>
+      <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
     </fieldset>
 
-    <fieldset>
-      <legend>Improve My Response</legend>
-      <label>
+    <div id="improve-section" class="improve-section">
+      <label for="show-advanced-improve">
         <input type="checkbox" id="show-advanced-improve">
         Show Advanced options for Improve-My-Response button
       </label>
-    </fieldset>
+    </div>
 
     <button type="submit">Save</button>
     <div class="toast" style="display:none">

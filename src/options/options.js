@@ -1,4 +1,4 @@
-import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
@@ -39,12 +39,16 @@ toggleBtn.addEventListener('click', () => {
 function setFeedback(message, type) {
   feedbackBox.textContent = message;
   feedbackBox.classList.remove('success', 'error');
+  apiKeyInput.classList.remove('success', 'error');
   if (!message) {
     feedbackBox.style.display = 'none';
     return;
   }
   feedbackBox.style.display = 'block';
-  if (type) feedbackBox.classList.add(type);
+  if (type) {
+    feedbackBox.classList.add(type);
+    apiKeyInput.classList.add(type);
+  }
 }
 
 async function getOrCreateEncKey() {
@@ -143,6 +147,7 @@ async function saveOptions(e) {
 async function loadProviderFields(provider) {
   apiKeyInput.value = '';
   modelInput.value = modelNames[provider] || '';
+  modelInput.placeholder = getDefaultModel(provider);
   if (!apiKeys[provider] || !encKeyB64) return;
   try {
     const key = await crypto.subtle.importKey('raw', b64ToBuf(encKeyB64), 'AES-GCM', false, ['decrypt']);

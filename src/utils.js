@@ -63,6 +63,20 @@ export async function fetchWithRetry(
   }
 }
 
+export function getDefaultModel(provider) {
+  switch (provider) {
+    case 'openrouter':
+    case 'openai':
+      return 'gpt-3.5-turbo';
+    case 'anthropic':
+      return 'claude-3-haiku-20240307';
+    case 'mistral':
+      return 'mistral-small';
+    default:
+      return '';
+  }
+}
+
 export function showToast(message) {
   if (typeof window !== 'undefined' && window.document && document.body) {
     const toast = document.createElement('div');
