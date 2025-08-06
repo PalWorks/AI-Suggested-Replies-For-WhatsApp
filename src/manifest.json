@@ -33,5 +33,11 @@
     "https://api.anthropic.com/*",
     "https://api.mistral.ai/*",
     "https://api.github.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["utils.js"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
   ]
 }
