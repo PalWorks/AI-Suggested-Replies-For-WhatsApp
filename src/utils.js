@@ -13,8 +13,7 @@ Follow these rules:
 - Do not ask redundant questions already answered in the conversation.
 - Maintain grammatical correctness and natural language style.
 - Keep replies friendly and human-like without sounding overly formal unless the conversation tone requires it.
-- Do not add extra explanation, metadata, or reasoning—only output the suggested reply text(s).
-- If instructed in the tone-of-voice setting, adapt word choice, formality, and style accordingly.`;
+- Do not add extra explanation, metadata, or reasoning—only output the suggested reply text(s).`;
 
 export function strToBuf(str) {
   return new TextEncoder().encode(str);

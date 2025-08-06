@@ -7,48 +7,45 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
 
-const apiKeyInput = document.getElementById('api-key');
 const apiChoiceSelect = document.getElementById('api-choice');
-const modelChoiceSelect = document.getElementById('model-choice');
+const apiKeyInput = document.getElementById('api-key');
+const modelInput = document.getElementById('model-name');
 const toggleBtn = document.getElementById('toggle-api-key');
-const statusIcon = document.getElementById('api-key-status');
+const feedbackBox = document.getElementById('api-key-feedback');
 
+let apiKeys = {};
+let modelNames = {};
+let encKeyB64 = '';
 let validateTimeout;
+
+apiChoiceSelect.addEventListener('change', () => {
+  loadProviderFields(apiChoiceSelect.value);
+  clearTimeout(validateTimeout);
+  validateTimeout = setTimeout(validateApiKey, 500);
+});
 
 apiKeyInput.addEventListener('input', () => {
   clearTimeout(validateTimeout);
   validateTimeout = setTimeout(validateApiKey, 500);
 });
 
-apiChoiceSelect.addEventListener('change', () => {
-  clearTimeout(validateTimeout);
-  validateTimeout = setTimeout(validateApiKey, 500);
-});
-
 toggleBtn.addEventListener('click', () => {
-  apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+  const isText = apiKeyInput.type === 'text';
+  apiKeyInput.type = isText ? 'password' : 'text';
+  toggleBtn.textContent = isText ? '👁' : '🙈';
+  toggleBtn.setAttribute('aria-label', isText ? 'Show API key' : 'Hide API key');
 });
 
-
-const chatHistoryWarningAlert = document.getElementById('chatHistoryWarningAlert');
-
-const closeAlertButton = document.querySelector('#hideHistoryWarningAlert');
-
-function showCustomAlert() {
-    chatHistoryWarningAlert.style.visibility = 'visible';
+function setFeedback(message, type) {
+  feedbackBox.textContent = message;
+  feedbackBox.classList.remove('success', 'error');
+  if (!message) {
+    feedbackBox.style.display = 'none';
+    return;
+  }
+  feedbackBox.style.display = 'block';
+  if (type) feedbackBox.classList.add(type);
 }
-
-function hideCustomAlert() {
-    chatHistoryWarningAlert.style.visibility = 'hidden';
-}
-
-closeAlertButton.addEventListener('click', function () {
-    hideCustomAlert();
-});
-
-document.getElementById('send-history-auto').addEventListener('click', function () {
-    showCustomAlert();
-});
 
 async function getOrCreateEncKey() {
   const {encKey} = await chrome.storage.local.get({encKey: ''});
@@ -63,27 +60,27 @@ async function getOrCreateEncKey() {
 
 async function validateApiKey() {
   const apiKey = apiKeyInput.value.trim();
-  const apiChoice = apiChoiceSelect.value;
+  const provider = apiChoiceSelect.value;
   if (!apiKey) {
-    statusIcon.textContent = '';
+    setFeedback('', '');
     return;
   }
   let url;
   let headers = {};
-  if (apiChoice === 'openrouter') {
+  if (provider === 'openrouter') {
     url = 'https://openrouter.ai/api/v1/models';
     headers = {
       Authorization: `Bearer ${apiKey}`,
       'HTTP-Referer': 'https://web.whatsapp.com',
       'X-Title': 'AI Suggested Replies For WhatsApp'
     };
-  } else if (apiChoice === 'claude') {
+  } else if (provider === 'anthropic') {
     url = 'https://api.anthropic.com/v1/models';
     headers = {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01'
     };
-  } else if (apiChoice === 'mistral') {
+  } else if (provider === 'mistral') {
     url = 'https://api.mistral.ai/v1/models';
     headers = {Authorization: `Bearer ${apiKey}`};
   } else {
@@ -92,87 +89,87 @@ async function validateApiKey() {
   }
   try {
     const res = await fetch(url, {headers});
-    statusIcon.textContent = res.ok ? '✅' : '❌';
+    setFeedback(res.ok ? 'Key verified' : 'Key not verified', res.ok ? 'success' : 'error');
   } catch {
-    statusIcon.textContent = '❌';
+    setFeedback('Key not verified', 'error');
   }
 }
 
 async function saveOptions(e) {
   e.preventDefault();
-  const apiKey = document.getElementById('api-key').value;
-  const sendHistory = document.querySelector('input[name="send-history"]:checked').value;
-  const toneOfVoice = document.getElementById('tone-of-voice').value;
+  const provider = apiChoiceSelect.value;
+  const apiKey = apiKeyInput.value.trim();
+  const modelName = modelInput.value.trim();
   const promptTemplate = document.getElementById('prompt-template').value;
-  const apiChoice = apiChoiceSelect.value;
-  const modelChoice = modelChoiceSelect.value;
   const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
 
   const key = await getOrCreateEncKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
-
-    const prev = await chrome.storage.local.get({showAdvancedImprove: false});
-
-    const storeObj = {
-      sendHistory: sendHistory,
-      apiChoice: apiChoice,
-      modelChoice: modelChoice,
-      toneOfVoice: toneOfVoice,
-      promptTemplate: promptTemplate,
-      showAdvancedImprove: showAdvancedImprove,
-      encryptedApiKey: bufToB64(encrypted),
-      iv: bufToB64(iv),
-      apiKey: ''
-    };
-
-    chrome.storage.local.set(storeObj, () => {
-      if (showAdvancedImprove && !prev.showAdvancedImprove) {
-        refreshWhatsAppTabs();
-      }
-      const alertBox = document.querySelector('.toast');
-      alertBox.style.display = 'block';
-      setTimeout(function () {
-        alertBox.style.display = 'none';
-        window.close();
-      }, 2000);
-    });
+  let encrypted;
+  if (apiKey) {
+    encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
+    apiKeys[provider] = {encryptedKey: bufToB64(encrypted), iv: bufToB64(iv)};
+  } else {
+    delete apiKeys[provider];
   }
+  if (modelName) {
+    modelNames[provider] = modelName;
+  } else {
+    delete modelNames[provider];
+  }
+
+  const prev = await chrome.storage.local.get({showAdvancedImprove: false});
+  const storeObj = {
+    apiChoice: provider,
+    apiKeys,
+    modelNames,
+    promptTemplate,
+    showAdvancedImprove
+  };
+
+  chrome.storage.local.set(storeObj, () => {
+    if (showAdvancedImprove && !prev.showAdvancedImprove) {
+      refreshWhatsAppTabs();
+    }
+    const alertBox = document.querySelector('.toast');
+    alertBox.style.display = 'block';
+    setTimeout(() => {
+      alertBox.style.display = 'none';
+      window.close();
+    }, 2000);
+  });
+}
+
+async function loadProviderFields(provider) {
+  apiKeyInput.value = '';
+  modelInput.value = modelNames[provider] || '';
+  if (!apiKeys[provider] || !encKeyB64) return;
+  try {
+    const key = await crypto.subtle.importKey('raw', b64ToBuf(encKeyB64), 'AES-GCM', false, ['decrypt']);
+    const {encryptedKey, iv} = apiKeys[provider];
+    const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(iv)}, key, b64ToBuf(encryptedKey));
+    apiKeyInput.value = new TextDecoder().decode(decrypted);
+  } catch {
+    apiKeyInput.value = '';
+  }
+}
 
 async function restoreOptions() {
   const items = await chrome.storage.local.get({
-    apiKey: '',
-    encryptedApiKey: '',
-    iv: '',
-    encKey: '',
-    sendHistory: 'manual',
     apiChoice: 'openai',
-    modelChoice: 'gpt-4o-mini',
-    toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
+    apiKeys: {},
+    modelNames: {},
     promptTemplate: DEFAULT_PROMPT,
-    showAdvancedImprove: false
+    showAdvancedImprove: false,
+    encKey: ''
   });
-  if (items.encryptedApiKey && items.iv && items.encKey) {
-    try {
-      const key = await crypto.subtle.importKey('raw', b64ToBuf(items.encKey), 'AES-GCM', false, ['decrypt']);
-      const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBuf(items.iv)}, key, b64ToBuf(items.encryptedApiKey));
-      apiKeyInput.value = new TextDecoder().decode(decrypted);
-    } catch {
-      apiKeyInput.value = '';
-    }
-  } else {
-    apiKeyInput.value = items.apiKey;
-  }
-  document.getElementById('tone-of-voice').value = items.toneOfVoice;
-  document.getElementById('prompt-template').value = items.promptTemplate;
+  apiKeys = items.apiKeys;
+  modelNames = items.modelNames;
+  encKeyB64 = items.encKey;
   apiChoiceSelect.value = items.apiChoice;
-  modelChoiceSelect.value = items.modelChoice;
+  document.getElementById('prompt-template').value = items.promptTemplate;
   document.getElementById('show-advanced-improve').checked = items.showAdvancedImprove;
-
-  const sendHistoryRadio = document.querySelector(`input[name="send-history"][value="${items.sendHistory}"]`);
-  if (sendHistoryRadio) {
-    sendHistoryRadio.checked = true;
-  }
+  await loadProviderFields(items.apiChoice);
   validateApiKey();
 }
 
