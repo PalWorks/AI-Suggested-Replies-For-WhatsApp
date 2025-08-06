@@ -1,5 +1,5 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {b64ToBuf, fetchWithRetry} from './utils.js';
+import {b64ToBuf, fetchWithRetry, showToast} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
@@ -33,7 +33,9 @@ async function sendLLM(prompt, tabId) {
     const apiKey = await getApiKey();
     const {apiChoice, modelChoice} = await chrome.storage.local.get({apiChoice: 'openai', modelChoice: 'gpt-4o-mini'});
     if (!apiKey) {
-      chrome.tabs.sendMessage(tabId, {type: 'error', data: 'Please set your API key in the extension options.'});
+      const msg = 'Please set your API key in the extension options.';
+      chrome.tabs.sendMessage(tabId, {type: 'error', data: msg});
+      showToast(msg);
       return;
     }
 
@@ -129,6 +131,7 @@ async function sendLLM(prompt, tabId) {
     }
   } catch (err) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
+    showToast(err.message);
     logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
   }
 }
