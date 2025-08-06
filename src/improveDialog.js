@@ -8,7 +8,9 @@ function showImproveDialog(chatHistory, draft) {
     improveDialogVisible = true;
     const overlay = document.createElement('div');
     overlay.id = 'improveDialogOverlay';
-    // Build dialog markup styled like native WhatsApp popups
+    // Build dialog markup styled like native WhatsApp popups.
+    // Theme colors are controlled via CSS variables that react to WhatsApp's
+    // body.dark class and fall back to prefers-color-scheme.
     overlay.innerHTML = `
       <style>
         #improveDialogOverlay {
@@ -23,9 +25,51 @@ function showImproveDialog(chatHistory, draft) {
           background: rgba(11, 20, 26, 0.85);
           z-index: 9999;
           font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+          /* Light theme defaults */
+          --modal-bg: #fff;
+          --text-color: #111;
+          --input-bg: #fff;
+          --border-color: #d1d7db;
+          --pill-bg: #fff;
+          --pill-border: #e0e0e0;
+          --pill-hover-bg: #f0f2f5;
+          --cancel-bg: #fff;
+          --cancel-border: #d1d7db;
+          --cancel-hover-bg: #f0f2f5;
+          --icon-color: #54656f;
+        }
+        /* Dark theme overrides when WhatsApp applies .dark to body */
+        body.dark #improveDialogOverlay {
+          --modal-bg: #23272A;
+          --text-color: #F0F0F0;
+          --input-bg: #2A2F32;
+          --border-color: #3A3F45;
+          --pill-bg: #2A2F32;
+          --pill-border: #3A3F45;
+          --pill-hover-bg: #3A3F45;
+          --cancel-bg: #2A2F32;
+          --cancel-border: #3A3F45;
+          --cancel-hover-bg: #3A3F45;
+          --icon-color: #AEBAC1;
+        }
+        /* Fallback dark theme using prefers-color-scheme */
+        @media (prefers-color-scheme: dark) {
+          body:not(.dark) #improveDialogOverlay {
+            --modal-bg: #23272A;
+            --text-color: #F0F0F0;
+            --input-bg: #2A2F32;
+            --border-color: #3A3F45;
+            --pill-bg: #2A2F32;
+            --pill-border: #3A3F45;
+            --pill-hover-bg: #3A3F45;
+            --cancel-bg: #2A2F32;
+            --cancel-border: #3A3F45;
+            --cancel-hover-bg: #3A3F45;
+            --icon-color: #AEBAC1;
+          }
         }
         #improveDialog {
-          background: var(--layer-background-default, #fff);
+          background: var(--modal-bg);
           border-radius: 12px;
           box-shadow: 0 4px 24px rgba(11, 20, 26, 0.2);
           width: min(90%, 560px);
@@ -33,22 +77,27 @@ function showImproveDialog(chatHistory, draft) {
           overflow-y: auto;
           padding: 32px;
           position: relative;
+          color: var(--text-color);
         }
         #improveDialog h3 {
           margin-top: 0;
           margin-bottom: 16px;
           font-size: 20px;
           font-weight: 500;
+          color: var(--text-color);
+        }
+        #improveDialog label {
+          color: var(--text-color);
         }
         #improveDialog textarea {
           width: 100%;
           margin-bottom: 12px;
-          border: 1px solid var(--border-stronger, #d1d7db);
+          border: 1px solid var(--border-color);
           border-radius: 8px;
           padding: 8px;
           font-size: 14px;
-          color: var(--primary-strong, #111b21);
-          background: var(--surface, #fff);
+          color: var(--text-color);
+          background: var(--input-bg);
           resize: vertical;
         }
         #improve-history {
@@ -60,18 +109,18 @@ function showImproveDialog(chatHistory, draft) {
           margin-bottom: 12px;
         }
         .pill {
-          background: #fff;
-          border: 1px solid #e0e0e0;
+          background: var(--pill-bg);
+          border: 1px solid var(--pill-border);
           border-radius: 16px;
           padding: 6px 12px;
           cursor: pointer;
           box-shadow: 0 1px 1px rgba(0,0,0,0.06);
           font-size: 14px;
-          color: var(--primary-strong, #111b21);
+          color: var(--text-color);
         }
         .pill:hover,
         .pill:focus {
-          background: #f0f2f5;
+          background: var(--pill-hover-bg);
         }
         .pill.selected {
           background: #25D366;
@@ -91,17 +140,17 @@ function showImproveDialog(chatHistory, draft) {
           margin-top: 16px;
         }
         #improve-cancel {
-          background: #fff;
-          border: 1px solid #d1d7db;
+          background: var(--cancel-bg);
+          border: 1px solid var(--cancel-border);
           border-radius: 16px;
           padding: 8px 16px;
           font-size: 14px;
-          color: var(--primary-strong, #111b21);
+          color: var(--text-color);
           cursor: pointer;
         }
         #improve-cancel:hover,
         #improve-cancel:focus {
-          background: #f0f2f5;
+          background: var(--cancel-hover-bg);
         }
         #improve-cancel:active {
           background: #25D366;
@@ -131,7 +180,7 @@ function showImproveDialog(chatHistory, draft) {
           font-size: 20px;
           line-height: 20px;
           cursor: pointer;
-          color: var(--icon-secondary, #54656f);
+          color: var(--icon-color);
         }
       </style>
       <div id="improveDialog" role="dialog" aria-modal="true">
