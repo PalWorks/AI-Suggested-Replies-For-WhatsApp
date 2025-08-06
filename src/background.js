@@ -1,5 +1,5 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {b64ToBuf, fetchWithRetry, showToast} from './utils.js';
+import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
@@ -160,20 +160,6 @@ async function sendLLM(prompt, tabId) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
     showToast(err.message);
     logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
-  }
-}
-
-function getDefaultModel(provider) {
-  switch (provider) {
-    case 'openrouter':
-    case 'openai':
-      return 'gpt-3.5-turbo';
-    case 'anthropic':
-      return 'claude-3-haiku-20240307';
-    case 'mistral':
-      return 'mistral-small';
-    default:
-      return '';
   }
 }
 
