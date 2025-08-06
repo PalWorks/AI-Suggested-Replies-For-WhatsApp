@@ -25,12 +25,23 @@ h1 {
 }
 
 /* Form styling */
+
+.options-container {
+    display: flex;
+    gap: 20px;
+}
+
 form {
     background-color: #fff;
     border-radius: 5px;
     padding: 20px;
+    flex: 1;
     max-width: 500px;
-    margin: 0 auto;
+    margin: 0;
+}
+
+#history {
+    flex: 1;
 }
 
 label {
@@ -183,6 +194,12 @@ button[type="submit"]:hover {
         background-color: #1e1e1e;
         border: 1px solid #555;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+}
+
+@media (max-width: 600px) {
+    .options-container {
+        flex-direction: column;
     }
 }
 
