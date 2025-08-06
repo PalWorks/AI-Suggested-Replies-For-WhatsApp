@@ -1,10 +1,11 @@
-// contentScript.js - version 2025-08-05T00:44:54Z
-'use strict';
+(() => {
+  // contentScript.js - version 2025-08-05T00:44:54Z
+  'use strict';
 
-let showToast;
-import(chrome.runtime.getURL('utils.js')).then(m => {
-  showToast = m.showToast;
-});
+  let showToast;
+  import(chrome.runtime.getURL('utils.js')).then(m => {
+    showToast = m.showToast;
+  });
 
 // Content script file will run in the context of web page.
 // With content script you can manipulate the web pages using
@@ -461,3 +462,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   return true;
 });
+
+})();
