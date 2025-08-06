@@ -8,25 +8,8 @@
 </head>
 <body>
 <h1>Options for GPT answer-suggestions</h1>
-<div id="chatHistoryWarningAlert" class="custom-alert">
-    <div class="alert-content">
-        <div>
-            <p>The last messages of your chat-conversation will be sent to the selected AI provider automatically, each time you
-                select another user, <br> or when a message comes into the currently
-                selected conversation.<br>
-                They are kept and used according to that provider's API documentation and privacy policy.<br> This is
-                less secure than the end-to-end encryption that <a
-                        href="https://faq.whatsapp.com/820124435853543/?helpref=uf_share"
-                        target="_blank">whatsapp(tm) uses</a>.<br></p>
-        </div>
-        <div style="text-align: center;">
-            <p><strong><span style="color: red;">Beware to leave this off in sensitive conversations!</span></strong>
-            </p>
-            <button type="submit" id="hideHistoryWarningAlert">I understand</button>
-        </div>
-    </div>
-</div>
-<form id="options-form">
+<div id="options-container">
+  <form id="options-form">
     <fieldset>
         <legend>Trigger chat answers from GPT:</legend>
         <input type="radio" id="send-history-auto" name="send-history" value="auto">
@@ -76,27 +59,48 @@
     </fieldset>
 
   <button type="submit">Save</button>
-  <div class="toast" style="display:none">
-      <p>Options saved successfully!</p>
-  </div>
-</form>
-<h2>LLM Call History</h2>
-<table id="history-table">
-    <thead>
+    <div class="toast" style="display:none">
+        <p>Options saved successfully!</p>
+    </div>
+  </form>
+  <div id="history">
+    <h2>LLM Call History</h2>
+    <table id="history-table">
+      <thead>
         <tr>
-            <th>Timestamp</th>
-            <th>Provider</th>
-            <th>Model</th>
-            <th>Prompt</th>
-            <th>Prompt Tokens</th>
-            <th>Completion Tokens</th>
-            <th>Total Tokens</th>
-            <th>Response Time (ms)</th>
+          <th>Timestamp</th>
+          <th>Provider</th>
+          <th>Model</th>
+          <th>Prompt</th>
+          <th>Prompt Tokens</th>
+          <th>Completion Tokens</th>
+          <th>Total Tokens</th>
+          <th>Response Time (ms)</th>
         </tr>
-    </thead>
-    <tbody></tbody>
- </table>
- <button id="download-csv">Download CSV</button>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="download-csv">Download CSV</button>
+  </div>
+</div>
+<div id="chatHistoryWarningAlert" class="custom-alert">
+    <div class="alert-content">
+        <div>
+            <p>The last messages of your chat-conversation will be sent to the selected AI provider automatically, each time you
+                select another user, <br> or when a message comes into the currently
+                selected conversation.<br>
+                They are kept and used according to that provider's API documentation and privacy policy.<br> This is
+                less secure than the end-to-end encryption that <a
+                        href="https://faq.whatsapp.com/820124435853543/?helpref=uf_share"
+                        target="_blank">whatsapp(tm) uses</a>.<br></p>
+        </div>
+        <div style="text-align: center;">
+            <p><strong><span style="color: red;">Beware to leave this off in sensitive conversations!</span></strong>
+            </p>
+            <button type="submit" id="hideHistoryWarningAlert">I understand</button>
+        </div>
+    </div>
+</div>
 <script type="module" src="options.js"></script>
 </body>
 </html>
