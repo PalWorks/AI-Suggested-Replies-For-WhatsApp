@@ -11,6 +11,9 @@ const apiChoiceSelect = document.getElementById('api-choice');
 const apiKeyInput = document.getElementById('api-key');
 const modelInput = document.getElementById('model-name');
 const toggleBtn = document.getElementById('toggle-api-key');
+const eyeImg = toggleBtn.querySelector('img');
+const showIcon = '../icons/Eye Icon - Show Password.svg';
+const hideIcon = '../icons/Eye Icon - Hide Password.svg';
 const feedbackBox = document.getElementById('api-key-feedback');
 const saveBtn = document.getElementById('save-button');
 
@@ -33,7 +36,7 @@ apiKeyInput.addEventListener('input', () => {
 toggleBtn.addEventListener('click', () => {
   const isText = apiKeyInput.type === 'text';
   apiKeyInput.type = isText ? 'password' : 'text';
-  toggleBtn.textContent = isText ? '👁' : '🙈';
+  eyeImg.src = isText ? showIcon : hideIcon;
   toggleBtn.setAttribute('aria-label', isText ? 'Show API key' : 'Hide API key');
 });
 
@@ -186,10 +189,8 @@ async function renderHistory() {
     const tr = document.createElement('tr');
     const cells = [
       new Date(item.timestamp).toLocaleString(),
-      item.provider,
       item.model,
       item.prompt,
-      item.tokensPrompt,
       item.tokensCompletion,
       item.tokensTotal,
       item.responseTime
@@ -205,15 +206,13 @@ async function renderHistory() {
 
 async function downloadCsv() {
   const {history = []} = await chrome.storage.local.get({history: []});
-  const headers = ['timestamp','provider','model','prompt','tokensPrompt','tokensCompletion','tokensTotal','responseTime'];
+  const headers = ['timestamp','model','prompt','tokensCompletion','tokensTotal','responseTime'];
   let csv = headers.join(',') + '\n';
   for (const item of history) {
     const row = [
       new Date(item.timestamp).toISOString(),
-      item.provider,
       item.model,
       item.prompt,
-      item.tokensPrompt,
       item.tokensCompletion,
       item.tokensTotal,
       item.responseTime

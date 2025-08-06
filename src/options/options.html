@@ -9,7 +9,8 @@
 <body>
 <h1>Options for GPT answer-suggestions</h1>
 
-  <div id="options-container">
+<div id="options-container">
+  <div id="settings-panel">
     <form id="options-form">
       <fieldset id="provider-settings">
         <legend>Provider Settings</legend>
@@ -32,7 +33,9 @@
         <label for="api-key">API Key</label>
         <div class="input-group">
           <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
-          <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">👁</button>
+          <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
+            <img src="../icons/Eye Icon - Show Password.svg" alt="">
+          </button>
         </div>
         <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
       </fieldset>
@@ -49,27 +52,30 @@
         </label>
       </div>
 
-      <button type="submit" id="save-button">Save</button>
+      <button type="submit" id="save-button" class="primary-button">Save</button>
     </form>
+  </div>
 
-  <div id="history">
-    <h2>LLM Call History</h2>
-    <table id="history-table">
-      <thead>
-        <tr>
-          <th>Timestamp</th>
-          <th>Provider</th>
-          <th>Model</th>
-          <th>Prompt</th>
-          <th>Prompt Tokens</th>
-          <th>Completion Tokens</th>
-          <th>Total Tokens</th>
-          <th>Response Time (ms)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="download-csv">Download CSV</button>
+  <div id="history-panel">
+    <div class="history-header">
+      <h2>LLM Call History</h2>
+      <button id="download-csv" class="primary-button">Download CSV</button>
+    </div>
+    <div class="history-table-wrapper">
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Model</th>
+            <th>Chat History</th>
+            <th>Completion Tokens</th>
+            <th>Total Tokens</th>
+            <th>Response Time (ms)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
