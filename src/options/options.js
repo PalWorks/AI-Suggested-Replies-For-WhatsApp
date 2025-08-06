@@ -1,7 +1,11 @@
 import {strToBuf, bufToB64, b64ToBuf} from '../utils.js';
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
+document.addEventListener('DOMContentLoaded', () => {
+  restoreOptions();
+  renderHistory();
+});
 document.getElementById('options-form').addEventListener('submit', saveOptions);
+document.getElementById('download-csv').addEventListener('click', downloadCsv);
 
 const apiKeyInput = document.getElementById('api-key');
 const apiChoiceSelect = document.getElementById('api-choice');
@@ -157,4 +161,55 @@ async function restoreOptions() {
     sendHistoryRadio.checked = true;
   }
   validateApiKey();
+}
+
+async function renderHistory() {
+  const {history = []} = await chrome.storage.local.get({history: []});
+  const tbody = document.querySelector('#history-table tbody');
+  tbody.innerHTML = '';
+  for (const item of history) {
+    const tr = document.createElement('tr');
+    const cells = [
+      new Date(item.timestamp).toLocaleString(),
+      item.provider,
+      item.model,
+      item.prompt,
+      item.tokensPrompt,
+      item.tokensCompletion,
+      item.tokensTotal,
+      item.responseTime
+    ];
+    for (const cell of cells) {
+      const td = document.createElement('td');
+      td.textContent = cell;
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+async function downloadCsv() {
+  const {history = []} = await chrome.storage.local.get({history: []});
+  const headers = ['timestamp','provider','model','prompt','tokensPrompt','tokensCompletion','tokensTotal','responseTime'];
+  let csv = headers.join(',') + '\n';
+  for (const item of history) {
+    const row = [
+      new Date(item.timestamp).toISOString(),
+      item.provider,
+      item.model,
+      item.prompt,
+      item.tokensPrompt,
+      item.tokensCompletion,
+      item.tokensTotal,
+      item.responseTime
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    csv += row + '\n';
+  }
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'history.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
