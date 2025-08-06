@@ -1,6 +1,7 @@
 function createGptButton() {
   const gptButton = document.createElement('button');
-  gptButton.innerHTML = '<span class="gptbtn-text">ChatGPT</span>\n' +
+  gptButton.type = 'button';
+  gptButton.innerHTML = '<span class="gptbtn-text">Generate Response</span>\n' +
     '  <span class="spinner"></span>\n';
   gptButton.className = 'gptbtn';
 
@@ -115,22 +116,20 @@ function createGptFooter(footer, mainNode) {
 
     let mainFooterContainer = inputContainer.parentNode;
     elementCount = mainFooterContainer.childElementCount
-    isWindows = elementCount === 2 // on windows the layout is different from the one on Mac (Unfortunately); on windows the attachement and speech button are outside of the main container area
-    mainFooterContainer.insertBefore(buttonContainer, inputContainer);
+    isWindows = elementCount === 2 // on windows the layout is different from the one on Mac (Unfortunately); on windows the attachment and speech button are outside of the main container area
     if (isWindows) {
         // mainContainerRef.childNodes[0].childNodes[0].childNodes[0].childNodes[0]
         let windowsOuterContainer = inputContainer.parentNode.parentNode.parentNode;
         windowsOuterContainer.removeChild(windowsOuterContainer.firstChild);
+        mainFooterContainer.removeChild(mainFooterContainer.firstChild);
+        let windowsOuterContainer2 = inputContainer.parentNode.parentNode;
+        windowsOuterContainer2.removeChild(windowsOuterContainer2.lastChild);
     } else {
         mainFooterContainer.removeChild(mainFooterContainer.firstChild);
-    }
-    mainFooterContainer.removeChild(mainFooterContainer.firstChild);
-    if (isWindows) {
-        let windowsOuterContainer = inputContainer.parentNode.parentNode;
-        windowsOuterContainer.removeChild(windowsOuterContainer.lastChild)
-    } else {
+        mainFooterContainer.removeChild(mainFooterContainer.firstChild);
         mainFooterContainer.removeChild(mainFooterContainer.lastChild);
     }
+    mainFooterContainer.insertBefore(buttonContainer, inputContainer);
     mainFooterContainer.append(buttonContainer2);
     // Add GPT button to container
     buttonContainer.appendChild(gptButtonObject.gptButton);
