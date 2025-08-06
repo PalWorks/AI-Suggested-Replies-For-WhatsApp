@@ -19,11 +19,12 @@
     "default_popup": "options/options.html"
   },
   "options_page": "options/options.html",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ],
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting",
+      "tabs"
+    ],
   "host_permissions": [
     "https://web.whatsapp.com/*"
   ],

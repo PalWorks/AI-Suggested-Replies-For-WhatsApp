@@ -112,27 +112,32 @@ async function saveOptions(e) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
 
-  const storeObj = {
-    sendHistory: sendHistory,
-    apiChoice: apiChoice,
-    modelChoice: modelChoice,
-    toneOfVoice: toneOfVoice,
-    promptTemplate: promptTemplate,
-    showAdvancedImprove: showAdvancedImprove,
-    encryptedApiKey: bufToB64(encrypted),
-    iv: bufToB64(iv),
-    apiKey: ''
-  };
+    const prev = await chrome.storage.local.get({showAdvancedImprove: false});
 
-  chrome.storage.local.set(storeObj, () => {
-    const alertBox = document.querySelector('.toast');
-    alertBox.style.display = 'block';
-    setTimeout(function () {
-      alertBox.style.display = 'none';
-      window.close();
-    }, 2000);
-  });
-}
+    const storeObj = {
+      sendHistory: sendHistory,
+      apiChoice: apiChoice,
+      modelChoice: modelChoice,
+      toneOfVoice: toneOfVoice,
+      promptTemplate: promptTemplate,
+      showAdvancedImprove: showAdvancedImprove,
+      encryptedApiKey: bufToB64(encrypted),
+      iv: bufToB64(iv),
+      apiKey: ''
+    };
+
+    chrome.storage.local.set(storeObj, () => {
+      if (showAdvancedImprove && !prev.showAdvancedImprove) {
+        refreshWhatsAppTabs();
+      }
+      const alertBox = document.querySelector('.toast');
+      alertBox.style.display = 'block';
+      setTimeout(function () {
+        alertBox.style.display = 'none';
+        window.close();
+      }, 2000);
+    });
+  }
 
 async function restoreOptions() {
   const items = await chrome.storage.local.get({
@@ -220,4 +225,17 @@ async function downloadCsv() {
   a.download = 'history.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function refreshWhatsAppTabs() {
+  const files = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
+  chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
+    for (const tab of tabs) {
+      chrome.scripting.executeScript({target: {tabId: tab.id}, files}, () => {
+        if (chrome.runtime.lastError) {
+          chrome.tabs.reload(tab.id);
+        }
+      });
+    }
+  });
 }
