@@ -4,6 +4,15 @@ import {logToGitHub} from './logger.js';
 
 let decryptedApiKey = null;
 
+async function addHistory(entry) {
+  const {history = []} = await chrome.storage.local.get({history: []});
+  history.push(entry);
+  if (history.length > 100) {
+    history.splice(0, history.length - 100);
+  }
+  await chrome.storage.local.set({history});
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.encryptedApiKey || changes.apiKey)) {
     decryptedApiKey = null;
@@ -29,6 +38,7 @@ async function getApiKey() {
 
 
 async function sendLLM(prompt, tabId) {
+  const startTime = Date.now();
   try {
     const apiKey = await getApiKey();
     const {apiChoice, modelChoice} = await chrome.storage.local.get({apiChoice: 'openai', modelChoice: 'gpt-4o-mini'});
@@ -81,18 +91,18 @@ async function sendLLM(prompt, tabId) {
       body
     }, 3, [500, 1000, 2000], fetch, logToGitHub);
 
+    let usage;
+
     if (apiChoice === 'claude') {
       const data = await response.json();
       const text = data.content?.[0]?.text || '';
+      usage = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
       chrome.tabs.sendMessage(tabId, {type: 'done'});
-      return;
-    }
-
-    if (response.body && response.body.getReader) {
+    } else if (response.body && response.body.getReader) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
@@ -108,6 +118,9 @@ async function sendLLM(prompt, tabId) {
           if (data === '[DONE]') continue;
           try {
             const parsed = JSON.parse(data);
+            if (parsed.usage) {
+              usage = parsed.usage;
+            }
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
               chrome.tabs.sendMessage(tabId, {type: 'token', data: token});
@@ -121,12 +134,28 @@ async function sendLLM(prompt, tabId) {
     } else {
       const data = await response.json();
       const text = data.choices?.[0]?.message?.content || '';
+      usage = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
       chrome.tabs.sendMessage(tabId, {type: 'done'});
     }
+
+    const endTime = Date.now();
+    const tokensPrompt = usage?.prompt_tokens || usage?.input_tokens || 0;
+    const tokensCompletion = usage?.completion_tokens || usage?.output_tokens || 0;
+    const tokensTotal = usage?.total_tokens || tokensPrompt + tokensCompletion;
+    await addHistory({
+      timestamp: Date.now(),
+      provider: apiChoice,
+      model: modelChoice,
+      prompt,
+      tokensPrompt,
+      tokensCompletion,
+      tokensTotal,
+      responseTime: endTime - startTime
+    });
   } catch (err) {
     chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
     logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});

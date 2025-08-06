@@ -75,11 +75,28 @@
         </div>
     </fieldset>
 
-    <button type="submit">Save</button>
-    <div class="toast" style="display:none">
-        <p>Options saved successfully!</p>
-    </div>
+  <button type="submit">Save</button>
+  <div class="toast" style="display:none">
+      <p>Options saved successfully!</p>
+  </div>
 </form>
+<h2>LLM Call History</h2>
+<table id="history-table">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Provider</th>
+            <th>Model</th>
+            <th>Prompt</th>
+            <th>Prompt Tokens</th>
+            <th>Completion Tokens</th>
+            <th>Total Tokens</th>
+            <th>Response Time (ms)</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+ </table>
+ <button id="download-csv">Download CSV</button>
 <script type="module" src="options.js"></script>
 </body>
 </html>
