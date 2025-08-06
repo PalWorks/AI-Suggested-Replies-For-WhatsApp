@@ -90,7 +90,9 @@ style.textContent = `
 }
 
 .gpt-message {
+  /* Maintain consistent height for the suggestion bar */
   min-height: 24px;
+  padding: 8px 0;
   display: block;
   white-space: pre-wrap;
 }
@@ -104,7 +106,7 @@ style.textContent = `
   }
 }
 
-/* message spinner styles are defined inline when used */
+/* message spinner removed; buttons now show their own loader */
 `;
 document.head.appendChild(style);
 
@@ -398,25 +400,13 @@ function initExtension() {
 initExtension();
 
 async function writeTextToSuggestionField(response, isLoading = false) {
-    try {
-        if (isLoading) {
-            newFooterParagraph.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:8px auto;">
-                    <style>
-                        .spinner {
-                            transform-origin: center;
-                            animation: spin 0.6s linear infinite;
-                        }
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                    </style>
-                    <circle class="spinner" cx="12" cy="12" r="10" stroke="#54656F" stroke-width="3" fill="none" stroke-dasharray="15, 85" stroke-dashoffset="0"/>
-                </svg>`;
-        } else {
-            newFooterParagraph.textContent = response;
-        }
+  try {
+    if (isLoading) {
+      // Clear text while loading; button spinner handles visual feedback
+      newFooterParagraph.textContent = '';
+    } else {
+      newFooterParagraph.textContent = response;
+    }
   } catch (e) {
     console.error(e);
     if (showToast) showToast('Failed to update suggestion');
