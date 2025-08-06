@@ -2,7 +2,7 @@
 import {b64ToBuf, fetchWithRetry, showToast} from './utils.js';
 import {logToGitHub} from './logger.js';
 
-const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'contentScript.js'];
+const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
 
 let decryptedApiKey = null;
 

@@ -106,6 +106,7 @@ async function saveOptions(e) {
   const promptTemplate = document.getElementById('prompt-template').value;
   const apiChoice = apiChoiceSelect.value;
   const modelChoice = modelChoiceSelect.value;
+  const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
 
   const key = await getOrCreateEncKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -117,6 +118,7 @@ async function saveOptions(e) {
     modelChoice: modelChoice,
     toneOfVoice: toneOfVoice,
     promptTemplate: promptTemplate,
+    showAdvancedImprove: showAdvancedImprove,
     encryptedApiKey: bufToB64(encrypted),
     iv: bufToB64(iv),
     apiKey: ''
@@ -142,7 +144,8 @@ async function restoreOptions() {
     apiChoice: 'openai',
     modelChoice: 'gpt-4o-mini',
     toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
-    promptTemplate: DEFAULT_PROMPT
+    promptTemplate: DEFAULT_PROMPT,
+    showAdvancedImprove: false
   });
   if (items.encryptedApiKey && items.iv && items.encKey) {
     try {
@@ -159,6 +162,7 @@ async function restoreOptions() {
   document.getElementById('prompt-template').value = items.promptTemplate;
   apiChoiceSelect.value = items.apiChoice;
   modelChoiceSelect.value = items.modelChoice;
+  document.getElementById('show-advanced-improve').checked = items.showAdvancedImprove;
 
   const sendHistoryRadio = document.querySelector(`input[name="send-history"][value="${items.sendHistory}"]`);
   if (sendHistoryRadio) {
