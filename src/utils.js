@@ -1,6 +1,8 @@
 // Utility functions for encryption and retries
 // Shared between background and options scripts
 
+export const encoder = new TextEncoder();
+
 export const DEFAULT_PROMPT = `You are an AI-powered reply assistant integrated into a Chrome extension for WhatsApp Web.
 You will receive the last 10 user and contact messages in a conversation.
 Your job is to generate one or more short, contextually accurate, and natural-sounding reply suggestions.

@@ -1,11 +1,10 @@
-const encoder = new TextEncoder();
+(() => {
+  let showToast;
+  import(chrome.runtime.getURL('utils.js')).then(m => {
+    showToast = m.showToast;
+  });
 
-let showToast;
-import(chrome.runtime.getURL('utils.js')).then(m => {
-  showToast = m.showToast;
-});
-
-class LinkedSet {
+  class LinkedSet {
   constructor() {
     this.set = new Set();
     this.array = [];
@@ -68,9 +67,9 @@ function parseHtml(main) {
     if (showToast) showToast('Failed to parse chat history');
     return {chatHistoryShort: '', lastIsMine: false};
   }
-}
+  }
 
-function getTextWithEmojis(element) {
+  function getTextWithEmojis(element) {
   let result = '';
 
   for (const childNode of element.childNodes) {
@@ -86,4 +85,7 @@ function getTextWithEmojis(element) {
   }
 
   return result;
-}
+  }
+
+  window.parseHtml = parseHtml;
+})();
