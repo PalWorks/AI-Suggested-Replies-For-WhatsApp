@@ -399,7 +399,6 @@ const observer = new MutationObserver(mutations => {
   });
 });
 
-let confirmVisible = false;
 
 function initExtension() {
   readData();
