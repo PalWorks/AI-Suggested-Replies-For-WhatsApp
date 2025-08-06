@@ -198,31 +198,74 @@ function extractConversation(node) {
 }
 
 let globalGptButtonObject;
+let globalImproveButtonObject;
+let activeButtonObject; // Tracks which button initiated the current request
 
-function gptButtonClicked() {
-    chrome.storage.local.get({
-        askedForPermission: false,
-    }, (result) => {
-        if (!result.askedForPermission) {
-            let message = "<ul>" +
-                "<li>The last 10 messages of your chat-conversation will be sent to openai, each time you press this button.</li>" +
-                "<li>They are handled by openai according to their <a href='https://openai.com/policies/api-data-usage-policies' target='_blank'>api-documentation</a> and <a href='https://openai.com/policies/privacy-policy' target='_blank'>privacy policy</a>.</li>" +
-                "<li>This is less secure than the end-to-end encryption that <a href='https://faq.whatsapp.com/820124435853543/?helpref=uf_share' target='_blank'>WhatsApp(tm) uses</a>.</li>" +
-                "</ul><br><br>" +
-                "<p style=\"display: inline-block; text-align: center; width: 100%;\">Are you ok with that?</p>"
-            confirmDialog(message).then((result) => {
-                if (result) {
-                    chrome.storage.local.set({
-                        askedForPermission: true,
-                    }, () => {
-                    })
-                    triggerEvent()
-                }
-            })
-        } else {
-            triggerEvent()
+// Helper to ask for user consent before sending messages to the LLM
+function withPermission(callback) {
+  chrome.storage.local.get({
+    askedForPermission: false,
+  }, result => {
+    if (!result.askedForPermission) {
+      const message = "<ul>" +
+        "<li>The last 10 messages of your chat-conversation will be sent to openai, each time you press this button.</li>" +
+        "<li>They are handled by openai according to their <a href='https://openai.com/policies/api-data-usage-policies' target='_blank'>api-documentation</a> and <a href='https://openai.com/policies/privacy-policy' target='_blank'>privacy policy</a>.</li>" +
+        "<li>This is less secure than the end-to-end encryption that <a href='https://faq.whatsapp.com/820124435853543/?helpref=uf_share' target='_blank'>WhatsApp(tm) uses</a>.</li>" +
+        "</ul><br><br>" +
+        "<p style=\"display: inline-block; text-align: center; width: 100%;\">Are you ok with that?</p>";
+      confirmDialog(message).then(res => {
+        if (res) {
+          chrome.storage.local.set({askedForPermission: true});
+          callback();
         }
-    })
+      });
+    } else {
+      callback();
+    }
+  });
+}
+
+// Triggered when the main AI Reply button is clicked
+function gptButtonClicked() {
+  withPermission(() => {
+    triggerEvent();
+  });
+}
+
+// Reads the current draft text from WhatsApp's input box
+function getDraftText() {
+  const textareaEl = globalMainNode.querySelector('[contenteditable="true"]');
+  return textareaEl ? textareaEl.textContent.trim() : '';
+}
+
+// Handles "Improve my response" button clicks
+async function improveButtonClicked() {
+  const draft = getDraftText();
+  if (!draft) {
+    if (showToast) showToast('Please provide an input to improve');
+    return;
+  }
+  withPermission(async () => {
+    const {chatHistoryShort} = extractConversation(globalMainNode);
+    const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
+    const result = await new Promise(resolve => {
+      chrome.storage.local.get({
+        toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
+        promptTemplate: DEFAULT_PROMPT
+      }, resolve);
+    });
+    const tone = result.toneOfVoice;
+    const template = result.promptTemplate;
+    const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\nTone of voice: ${tone}\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
+    activeButtonObject = globalImproveButtonObject;
+    activeButtonObject.setBusy(true);
+    streamingText = '';
+    writeTextToSuggestionField('', true);
+    await chrome.runtime.sendMessage({
+      message: 'sendChatToGpt',
+      prompt
+    });
+  });
 }
 
 function maybeShowOptionsHintInResponseField() {
@@ -259,9 +302,11 @@ function injectUI(mainNode) {
     const {
         newFooter,
         gptButtonObject,
+        improveButtonObject,
         copyButton
       } = createGptFooter(footer, mainNode);
     globalGptButtonObject = gptButtonObject;
+    globalImproveButtonObject = improveButtonObject;
     newFooterParagraph = newFooter.querySelectorAll('.selectable-text.copyable-text')[0];
     newFooterParagraph.classList.add('gpt-message');
     maybeShowOptionsHintInResponseField();
@@ -300,7 +345,8 @@ function injectUI(mainNode) {
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
-        gptButtonObject.setBusy(true);
+        activeButtonObject = gptButtonObject;
+        activeButtonObject.setBusy(true);
         streamingText = '';
         writeTextToSuggestionField('', true);
         await chrome.runtime.sendMessage({
@@ -314,8 +360,9 @@ function injectUI(mainNode) {
     const gptButton = gptButtonObject.gptButton;
     gptButton.addEventListener('click', () => {
         gptButtonClicked();
-
     });
+    const improveButton = improveButtonObject.gptButton;
+    improveButton.addEventListener('click', improveButtonClicked);
 }
 
 const observer = new MutationObserver(mutations => {
@@ -382,16 +429,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     streamingText += request.data;
     writeTextToSuggestionField(streamingText);
   } else if (request.type === 'done') {
-    globalGptButtonObject.setBusy(false);
+    if (activeButtonObject) activeButtonObject.setBusy(false);
   } else if (request.type === 'error') {
-    globalGptButtonObject.setBusy(false);
+    if (activeButtonObject) activeButtonObject.setBusy(false);
     writeTextToSuggestionField(request.data || 'Failed to generate reply');
     if (showToast) showToast(request.data || 'Failed to generate reply');
   } else if (request.type === 'showToast') {
     if (showToast) showToast(request.message);
   } else if (request.message === 'gptResponse') {
     const response = request.response;
-    globalGptButtonObject.setBusy(false);
+    if (activeButtonObject) activeButtonObject.setBusy(false);
     if (response.error !== null && response.error !== undefined) {
       writeTextToSuggestionField(response.error.message);
       return;

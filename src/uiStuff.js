@@ -1,7 +1,11 @@
-function createGptButton() {
+// Creates a styled action button used for AI features
+// label - text shown on the button
+// id - optional id for future lookups
+function createGptButton(label = 'AI Reply', id) {
   const gptButton = document.createElement('button');
   gptButton.type = 'button';
-  gptButton.innerHTML = '<span class="gptbtn-text">AI Reply</span><span class="spinner"></span>';
+  gptButton.id = id || '';
+  gptButton.innerHTML = `<span class="gptbtn-text">${label}</span><span class="spinner"></span>`;
   gptButton.className = 'gptbtn';
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -96,8 +100,9 @@ function createGptFooter(footer, mainNode) {
     const inputContainer = mainContainer.querySelector('.lexical-rich-text-input');
     const inputContainerRef = mainContainerRef.querySelector('.lexical-rich-text-input');
 
-    // Create GPT button
-    const gptButtonObject = createGptButton();
+    // Create GPT button and improvement button
+    const gptButtonObject = createGptButton('AI Reply', 'ai-reply-btn');
+    const improveButtonObject = createGptButton('Improve my response', 'improve-response-btn');
 
     function createButtonContainer() {
         const buttonContainer = document.createElement('div');
@@ -130,8 +135,9 @@ function createGptFooter(footer, mainNode) {
     }
     mainFooterContainer.insertBefore(buttonContainer, inputContainer);
     mainFooterContainer.append(buttonContainer2);
-    // Add GPT button to container
+    // Add both buttons to container in a single row
     buttonContainer.appendChild(gptButtonObject.gptButton);
+    buttonContainer.appendChild(improveButtonObject.gptButton);
 
     // Create and add copy button
     const copyButton = creatCopyButton(newFooter, buttonContainer2);
@@ -170,6 +176,7 @@ function createGptFooter(footer, mainNode) {
     return {
         newFooter,
         gptButtonObject,
+        improveButtonObject,
         copyButton
     };
 }
