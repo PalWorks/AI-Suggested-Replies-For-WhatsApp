@@ -78,21 +78,23 @@ let newFooterParagraph;
 async function createPrompt(lastIsMine, chatHistoryShort) {
     let promptCenter;
     let mePrefix = 'Me: ';
-    let promptPrefix1 = "You are an excellent chat-turn completer for Whatsapp. Your own turns in the provided chat-history are prefixed by 'Me: ', the turns of others by '<integer>: '. In a one-on-one coversation the other's turn is prefixed by '1: '.";
     if (lastIsMine) {
         promptCenter = 'Complete the following chat by providing a second message for my double-texting sequence. Do not react but continue the thought, elaborate, or add a supplementary point, without repeating the last utterance.';
     } else {
         promptCenter = 'As "Me", give an utterance completing the following chat conversation flow.';
     }
 
+    const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
     const result = await new Promise((resolve) => {
         chrome.storage.local.get({
-            toneOfVoice: 'Use Emoji and my own writing style. Be concise.'
+            toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
+            promptTemplate: DEFAULT_PROMPT
         }, resolve);
     });
 
     const tone_of_voice = result.toneOfVoice;
-    let prompt = promptPrefix1 + ' ' + promptCenter + ' ' + tone_of_voice + '\n\n' + "chat history:\n" + chatHistoryShort + "\n\n" + mePrefix;
+    const promptTemplate = result.promptTemplate;
+    const prompt = `${promptTemplate}\n${promptCenter}\nTone of voice: ${tone_of_voice}\n\nchat history:\n${chatHistoryShort}\n\n${mePrefix}`;
     return prompt;
 }
 

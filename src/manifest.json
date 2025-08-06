@@ -15,7 +15,8 @@
   },
   "action": {
     "default_title": "AI Suggested Replies For WhatsApp",
-    "default_icon": "icons/Ext-Icon-1.png"
+    "default_icon": "icons/Ext-Icon-1.png",
+    "default_popup": "options/options.html"
   },
   "options_page": "options/options.html",
   "permissions": [

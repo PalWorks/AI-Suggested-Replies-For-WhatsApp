@@ -1,4 +1,4 @@
-import {strToBuf, bufToB64, b64ToBuf} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT} from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('options-form').addEventListener('submit', saveOptions);
@@ -99,6 +99,7 @@ async function saveOptions(e) {
   const apiKey = document.getElementById('api-key').value;
   const sendHistory = document.querySelector('input[name="send-history"]:checked').value;
   const toneOfVoice = document.getElementById('tone-of-voice').value;
+  const promptTemplate = document.getElementById('prompt-template').value;
   const apiChoice = apiChoiceSelect.value;
   const modelChoice = modelChoiceSelect.value;
 
@@ -111,6 +112,7 @@ async function saveOptions(e) {
     apiChoice: apiChoice,
     modelChoice: modelChoice,
     toneOfVoice: toneOfVoice,
+    promptTemplate: promptTemplate,
     encryptedApiKey: bufToB64(encrypted),
     iv: bufToB64(iv),
     apiKey: ''
@@ -135,7 +137,8 @@ async function restoreOptions() {
     sendHistory: 'manual',
     apiChoice: 'openai',
     modelChoice: 'gpt-4o-mini',
-    toneOfVoice: 'Use Emoji and my own writing style. Be concise.'
+    toneOfVoice: 'Use Emoji and my own writing style. Be concise.',
+    promptTemplate: DEFAULT_PROMPT
   });
   if (items.encryptedApiKey && items.iv && items.encKey) {
     try {
@@ -149,6 +152,7 @@ async function restoreOptions() {
     apiKeyInput.value = items.apiKey;
   }
   document.getElementById('tone-of-voice').value = items.toneOfVoice;
+  document.getElementById('prompt-template').value = items.promptTemplate;
   apiChoiceSelect.value = items.apiChoice;
   modelChoiceSelect.value = items.modelChoice;
 
