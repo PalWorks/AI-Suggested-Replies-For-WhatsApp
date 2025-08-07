@@ -2,6 +2,20 @@
 import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel, fetchWithTimeout} from './utils.js';
 import {logToGitHub} from './logger.js';
 
+const MESSAGING_ERROR = 'Unable to communicate with the extension backend. Please refresh the page.';
+
+function safeSendTabMessage(tabId, message) {
+  chrome.tabs.sendMessage(tabId, message, response => {
+    if (chrome.runtime.lastError || !response) {
+      chrome.tabs.sendMessage(tabId, {type: 'error', error: MESSAGING_ERROR}, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Failed to send fallback error', chrome.runtime.lastError);
+        }
+      });
+    }
+  });
+}
+
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
 
 let decryptedApiKeys = {};
@@ -69,7 +83,7 @@ async function sendLLM(prompt, tabId) {
     const apiKey = await getApiKey(apiChoice);
     if (!apiKey) {
       const msg = 'Please set your API key in the extension options.';
-      chrome.tabs.sendMessage(tabId, {type: 'error', error: msg});
+      safeSendTabMessage(tabId, {type: 'error', error: msg});
       showToast(msg);
       return;
     }
@@ -132,11 +146,11 @@ async function sendLLM(prompt, tabId) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
-      chrome.tabs.sendMessage(tabId, {
+      safeSendTabMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
-      chrome.tabs.sendMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done'});
     } else if (response.body && response.body.getReader) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -158,14 +172,14 @@ async function sendLLM(prompt, tabId) {
             }
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
-              chrome.tabs.sendMessage(tabId, {type: 'token', data: token});
+              safeSendTabMessage(tabId, {type: 'token', data: token});
             }
           } catch (e) {
             // ignore parse errors
           }
         }
       }
-      chrome.tabs.sendMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done'});
     } else {
       const data = await response.json().catch(() => {
         throw new Error('Unexpected API response');
@@ -178,11 +192,11 @@ async function sendLLM(prompt, tabId) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
-      chrome.tabs.sendMessage(tabId, {
+      safeSendTabMessage(tabId, {
         message: 'gptResponse',
         response: {text}
       });
-      chrome.tabs.sendMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done'});
     }
 
     const endTime = Date.now();
@@ -212,7 +226,7 @@ async function sendLLM(prompt, tabId) {
     } else {
       msg = `Unknown error: ${err.message}`;
     }
-    chrome.tabs.sendMessage(tabId, {type: 'error', error: msg});
+    safeSendTabMessage(tabId, {type: 'error', error: msg});
     showToast(msg);
     logToGitHub(`LLM request failed: ${msg}\n${err.stack || ''}`).catch(() => {});
   }
@@ -220,15 +234,20 @@ async function sendLLM(prompt, tabId) {
 
 async function initExtension() {
   await loadExtensionEnabled();
-  chrome.runtime.onMessage.addListener((request, sender) => {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'openOptionsPage') {
       chrome.runtime.openOptionsPage();
+      sendResponse({received: true});
     } else if (request.message === 'sendChatToGpt') {
       sendLLM(request.prompt, sender.tab.id);
-      return true;
+      sendResponse({received: true});
     } else if (request.message === 'providerChanged' && request.providerUrl) {
-      chrome.permissions.request({origins: [request.providerUrl]});
+      chrome.permissions.request({origins: [request.providerUrl]}, () => {
+        sendResponse({received: true});
+      });
+      return true;
     }
+    return true;
   });
 
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {

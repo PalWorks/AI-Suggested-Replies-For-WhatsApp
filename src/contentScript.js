@@ -194,6 +194,16 @@ document.head.appendChild(style);
     }, 25000);
   }
 
+  const MESSAGING_ERROR = 'Unable to communicate with the extension backend. Please refresh the page.';
+
+  function handleMessagingError() {
+    clearLoaderTimeout();
+    if (activeButtonObject) activeButtonObject.setBusy(false);
+    writeTextToSuggestionField('');
+    showErrorBanner(MESSAGING_ERROR);
+    if (showToast) showToast(MESSAGING_ERROR);
+  }
+
   function readData() {
   try {
     chrome.storage.local.get(
@@ -320,9 +330,13 @@ async function improveButtonClicked() {
         startLoaderTimeout();
         streamingText = '';
         writeTextToSuggestionField('', true);
-        await chrome.runtime.sendMessage({
+        chrome.runtime.sendMessage({
           message: 'sendChatToGpt',
           prompt
+        }, response => {
+          if (chrome.runtime.lastError || !response) {
+            handleMessagingError();
+          }
         });
     } else {
       const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
@@ -338,9 +352,13 @@ async function improveButtonClicked() {
         startLoaderTimeout();
         streamingText = '';
         writeTextToSuggestionField('', true);
-        await chrome.runtime.sendMessage({
+        chrome.runtime.sendMessage({
           message: 'sendChatToGpt',
           prompt
+        }, response => {
+          if (chrome.runtime.lastError || !response) {
+            handleMessagingError();
+          }
         });
     }
   });
@@ -406,9 +424,13 @@ function injectUI(mainNode) {
           startLoaderTimeout();
           streamingText = '';
           writeTextToSuggestionField('', true);
-          await chrome.runtime.sendMessage({
-              message: "sendChatToGpt",
-              prompt: prompt,
+          chrome.runtime.sendMessage({
+              message: 'sendChatToGpt',
+              prompt: prompt
+          }, response => {
+              if (chrome.runtime.lastError || !response) {
+                  handleMessagingError();
+              }
           });
     };
   const gptButton = gptButtonObject.gptButton;
@@ -514,11 +536,12 @@ async function writeTextToSuggestionField(response, isLoading = false) {
       if (response.error !== null && response.error !== undefined) {
         writeTextToSuggestionField('');
         showErrorBanner(response.error.message);
+        sendResponse({received: true});
         return;
       }
       writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
     }
-    return true;
+    sendResponse({received: true});
   });
 
 })();
