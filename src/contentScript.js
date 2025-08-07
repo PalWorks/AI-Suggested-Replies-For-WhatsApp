@@ -167,6 +167,7 @@ function triggerEvent() {
 
 let globalMainNode;
 let newFooterParagraph;
+let globalDeleteButton;
 
 async function createPrompt(lastIsMine, chatHistoryShort) {
     let promptCenter;
@@ -312,16 +313,22 @@ function injectUI(mainNode) {
         newFooter,
         gptButtonObject,
         improveButtonObject,
-        copyButton
+        copyButton,
+        deleteButton
       } = createGptFooter(footer, mainNode);
     globalGptButtonObject = gptButtonObject;
     globalImproveButtonObject = improveButtonObject;
+    globalDeleteButton = deleteButton;
     newFooterParagraph = newFooter.querySelectorAll('.selectable-text.copyable-text')[0];
     newFooterParagraph.classList.add('gpt-message');
     maybeShowOptionsHintInResponseField();
     copyButton.addEventListener('click', () => {
         copyToSendField(newFooterParagraph.textContent);
     });
+    deleteButton.addEventListener('click', () => {
+      writeTextToSuggestionField('');
+    });
+    updateDeleteButtonVisibility();
     // Removed legacy privacy notice to streamline the suggestion bar UI
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
@@ -388,6 +395,13 @@ function initExtension() {
 
 initExtension();
 
+function updateDeleteButtonVisibility() {
+  if (globalDeleteButton) {
+    const hasText = !!(newFooterParagraph && newFooterParagraph.textContent.trim());
+    globalDeleteButton.style.display = hasText ? 'block' : 'none';
+  }
+}
+
 async function writeTextToSuggestionField(response, isLoading = false) {
   try {
     if (isLoading) {
@@ -396,6 +410,7 @@ async function writeTextToSuggestionField(response, isLoading = false) {
     } else {
       newFooterParagraph.textContent = response;
     }
+    updateDeleteButtonVisibility();
   } catch (e) {
     console.error(e);
     if (showToast) showToast('Failed to update suggestion');
