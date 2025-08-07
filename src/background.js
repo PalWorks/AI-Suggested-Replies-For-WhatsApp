@@ -5,6 +5,12 @@ import {logToGitHub} from './logger.js';
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
 
 let decryptedApiKeys = {};
+let extensionEnabled = true;
+
+async function loadExtensionEnabled() {
+  const {extensionEnabled: stored = true} = await chrome.storage.local.get({extensionEnabled: true});
+  extensionEnabled = stored;
+}
 
 async function addHistory(entry) {
   const {history = []} = await chrome.storage.local.get({history: []});
@@ -16,8 +22,29 @@ async function addHistory(entry) {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.apiKeys) {
-    decryptedApiKeys = {};
+  if (area === 'local') {
+    if (changes.apiKeys) {
+      decryptedApiKeys = {};
+    }
+    if (changes.extensionEnabled) {
+      extensionEnabled = changes.extensionEnabled.newValue;
+      if (!extensionEnabled) {
+        chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
+          for (const tab of tabs) {
+            chrome.tabs.reload(tab.id);
+          }
+        });
+      } else {
+        chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
+          for (const tab of tabs) {
+            chrome.scripting.executeScript({
+              target: {tabId: tab.id},
+              files: CONTENT_SCRIPTS
+            });
+          }
+        });
+      }
+    }
   }
 });
 
@@ -163,7 +190,8 @@ async function sendLLM(prompt, tabId) {
   }
 }
 
-function initExtension() {
+async function initExtension() {
+  await loadExtensionEnabled();
   chrome.runtime.onMessage.addListener((request, sender) => {
     if (request.action === 'openOptionsPage') {
       chrome.runtime.openOptionsPage();
@@ -176,6 +204,7 @@ function initExtension() {
   });
 
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (!extensionEnabled) return;
     if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('https://web.whatsapp.com/')) {
       chrome.scripting.executeScript({
         target: {tabId},
@@ -185,6 +214,7 @@ function initExtension() {
   });
 
   chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
+    if (!extensionEnabled) return;
     for (const tab of tabs) {
       chrome.scripting.executeScript({
         target: {tabId: tab.id},
