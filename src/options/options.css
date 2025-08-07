@@ -23,6 +23,8 @@
   --wa-accent: var(--accent);
   --input-border-light: #d1d7db;
   --input-border-dark: #2a3942;
+  --icon-filter-light: none;
+  --icon-filter-dark: invert(1) brightness(1.2);
 }
 
 body {
@@ -76,6 +78,7 @@ body {
 .icon-item img {
   width: 24px;
   height: 24px;
+  filter: var(--icon-filter-light);
 }
 
 .icon-item.active {
@@ -117,6 +120,10 @@ body {
   }
   .icon-item.active {
     background: var(--divider-dark);
+  }
+  .icon-item img,
+  .eye-icon img {
+    filter: var(--icon-filter-dark);
   }
 }
 
@@ -321,6 +328,7 @@ button {
 .eye-icon img {
   width: 24px;
   height: 24px;
+  filter: var(--icon-filter-light);
 }
 
 .feedback {
