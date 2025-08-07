@@ -126,11 +126,27 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-let streamingText = '';
+  let streamingText = '';
+  let loaderTimeoutId;
 
+  function clearLoaderTimeout() {
+    if (loaderTimeoutId) {
+      clearTimeout(loaderTimeoutId);
+      loaderTimeoutId = null;
+    }
+  }
 
+  function startLoaderTimeout() {
+    clearLoaderTimeout();
+    loaderTimeoutId = setTimeout(() => {
+      loaderTimeoutId = null;
+      if (activeButtonObject) activeButtonObject.setBusy(false);
+      writeTextToSuggestionField('No response from server. Please try again.');
+      if (showToast) showToast('No response from server. Please try again.');
+    }, 25000);
+  }
 
-function readData() {
+  function readData() {
   try {
     chrome.storage.local.get(
       {showAdvancedImprove: false},
@@ -249,14 +265,15 @@ async function improveButtonClicked() {
       if (instructions) parts.push(`Additional instructions: ${instructions}`);
       parts.push(`\nChat history:\n${chatHistoryShort}\n\nMy draft:\n${userDraft}`);
       const prompt = parts.join('\n');
-      activeButtonObject = globalImproveButtonObject;
-      activeButtonObject.setBusy(true);
-      streamingText = '';
-      writeTextToSuggestionField('', true);
-      await chrome.runtime.sendMessage({
-        message: 'sendChatToGpt',
-        prompt
-      });
+        activeButtonObject = globalImproveButtonObject;
+        activeButtonObject.setBusy(true);
+        startLoaderTimeout();
+        streamingText = '';
+        writeTextToSuggestionField('', true);
+        await chrome.runtime.sendMessage({
+          message: 'sendChatToGpt',
+          prompt
+        });
     } else {
       const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
       const result = await new Promise(resolve => {
@@ -266,14 +283,15 @@ async function improveButtonClicked() {
       });
       const template = result.promptTemplate;
       const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
-      activeButtonObject = globalImproveButtonObject;
-      activeButtonObject.setBusy(true);
-      streamingText = '';
-      writeTextToSuggestionField('', true);
-      await chrome.runtime.sendMessage({
-        message: 'sendChatToGpt',
-        prompt
-      });
+        activeButtonObject = globalImproveButtonObject;
+        activeButtonObject.setBusy(true);
+        startLoaderTimeout();
+        streamingText = '';
+        writeTextToSuggestionField('', true);
+        await chrome.runtime.sendMessage({
+          message: 'sendChatToGpt',
+          prompt
+        });
     }
   });
 }
@@ -333,14 +351,15 @@ function injectUI(mainNode) {
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
         let prompt = await createPrompt(lastIsMine, chatHistoryShort);
-        activeButtonObject = gptButtonObject;
-        activeButtonObject.setBusy(true);
-        streamingText = '';
-        writeTextToSuggestionField('', true);
-        await chrome.runtime.sendMessage({
-            message: "sendChatToGpt",
-            prompt: prompt,
-        });
+          activeButtonObject = gptButtonObject;
+          activeButtonObject.setBusy(true);
+          startLoaderTimeout();
+          streamingText = '';
+          writeTextToSuggestionField('', true);
+          await chrome.runtime.sendMessage({
+              message: "sendChatToGpt",
+              prompt: prompt,
+          });
     };
   const gptButton = gptButtonObject.gptButton;
   gptButton.addEventListener('click', () => {
@@ -417,28 +436,34 @@ async function writeTextToSuggestionField(response, isLoading = false) {
   }
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'token') {
-    streamingText += request.data;
-    writeTextToSuggestionField(streamingText);
-  } else if (request.type === 'done') {
-    if (activeButtonObject) activeButtonObject.setBusy(false);
-  } else if (request.type === 'error') {
-    if (activeButtonObject) activeButtonObject.setBusy(false);
-    writeTextToSuggestionField(request.data || 'Failed to generate reply');
-    if (showToast) showToast(request.data || 'Failed to generate reply');
-  } else if (request.type === 'showToast') {
-    if (showToast) showToast(request.message);
-  } else if (request.message === 'gptResponse') {
-    const response = request.response;
-    if (activeButtonObject) activeButtonObject.setBusy(false);
-    if (response.error !== null && response.error !== undefined) {
-      writeTextToSuggestionField(response.error.message);
-      return;
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (
+      ['token', 'done', 'error'].includes(request.type) ||
+      request.message === 'gptResponse'
+    ) {
+      clearLoaderTimeout();
     }
-    writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
-  }
-  return true;
-});
+    if (request.type === 'token') {
+      streamingText += request.data;
+      writeTextToSuggestionField(streamingText);
+    } else if (request.type === 'done') {
+      if (activeButtonObject) activeButtonObject.setBusy(false);
+    } else if (request.type === 'error') {
+      if (activeButtonObject) activeButtonObject.setBusy(false);
+      writeTextToSuggestionField(request.data || 'Failed to generate reply');
+      if (showToast) showToast(request.data || 'Failed to generate reply');
+    } else if (request.type === 'showToast') {
+      if (showToast) showToast(request.message);
+    } else if (request.message === 'gptResponse') {
+      const response = request.response;
+      if (activeButtonObject) activeButtonObject.setBusy(false);
+      if (response.error !== null && response.error !== undefined) {
+        writeTextToSuggestionField(response.error.message);
+        return;
+      }
+      writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
+    }
+    return true;
+  });
 
 })();
