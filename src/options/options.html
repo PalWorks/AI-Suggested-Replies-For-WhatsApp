@@ -1,84 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="options.css">
-    <title>ChatGPT Options</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="options.css">
+  <title>ChatGPT Options</title>
 </head>
 <body>
-<h1>Options for GPT answer-suggestions</h1>
+  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">☰</button>
+  <div class="options-container">
+    <nav id="sidebar" class="sidebar" aria-label="Main">
+      <ul>
+        <li><button class="nav-item active" data-tab="settings" aria-current="page">
+          <span class="nav-title">Settings</span>
+          <span class="nav-subtitle">Provider &amp; model</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="history">
+          <span class="nav-title">Logs / History</span>
+          <span class="nav-subtitle">LLM call log</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="guide">
+          <span class="nav-title">User Guide</span>
+          <span class="nav-subtitle">How it works</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="about">
+          <span class="nav-title">About</span>
+          <span class="nav-subtitle">Extension info</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="bugs">
+          <span class="nav-title">Bug / Feature Request</span>
+          <span class="nav-subtitle">Send feedback</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="help">
+          <span class="nav-title">Help</span>
+          <span class="nav-subtitle">Support</span>
+        </button></li>
+      </ul>
+    </nav>
+    <main id="main-content" class="main-content">
+      <section id="settings" class="tab-content active" role="tabpanel">
+        <h1 class="page-title">Settings</h1>
+        <form id="options-form">
+          <fieldset id="provider-settings">
+            <legend>Provider Settings</legend>
+            <div class="provider-model-row">
+              <div class="provider-col">
+                <label for="api-choice">Provider</label>
+                <select id="api-choice" name="api-choice">
+                  <option value="openai">OpenAI</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="mistral">Mistral</option>
+                </select>
+              </div>
+              <div class="model-col">
+                <label for="model-name">Model Name</label>
+                <input type="text" id="model-name" name="model-name" placeholder="gpt-3.5-turbo">
+                <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
+              </div>
+            </div>
+            <label for="api-key">API Key</label>
+            <div class="input-group">
+              <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
+              <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
+                <img src="../icons/Eye Icon - Show Password.svg" alt="">
+              </button>
+            </div>
+            <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
+          </fieldset>
 
-<div id="options-container">
-  <div id="settings-panel">
-    <form id="options-form">
-      <fieldset id="provider-settings">
-        <legend>Provider Settings</legend>
-        <div class="provider-model-row">
-          <div class="provider-col">
-            <label for="api-choice">Provider</label>
-            <select id="api-choice" name="api-choice">
-              <option value="openai">OpenAI</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="anthropic">Anthropic</option>
-              <option value="mistral">Mistral</option>
-            </select>
+          <fieldset id="system-instructions">
+            <legend>System Instructions</legend>
+            <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
+          </fieldset>
+
+          <div id="improve-section" class="improve-section">
+            <label for="show-advanced-improve">
+              <input type="checkbox" id="show-advanced-improve">
+              Show Advanced options for Improve-My-Response button
+            </label>
           </div>
-          <div class="model-col">
-            <label for="model-name">Model Name</label>
-            <input type="text" id="model-name" name="model-name" placeholder="gpt-3.5-turbo">
-            <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
-          </div>
+
+          <button type="submit" id="save-button" class="primary-button">Save</button>
+        </form>
+      </section>
+      <section id="history" class="tab-content" role="tabpanel">
+        <h1 class="page-title">Logs / History</h1>
+        <div class="history-header">
+          <button id="download-csv" class="primary-button">Download CSV</button>
         </div>
-        <label for="api-key">API Key</label>
-        <div class="input-group">
-          <input type="password" id="api-key" name="api-key" aria-describedby="api-key-feedback">
-          <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
-            <img src="../icons/Eye Icon - Show Password.svg" alt="">
-          </button>
+        <div class="history-table-wrapper">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Model</th>
+                <th>Chat History</th>
+                <th>Completion Tokens</th>
+                <th>Total Tokens</th>
+                <th>Response Time (ms)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
-      </fieldset>
-
-      <fieldset id="system-instructions">
-        <legend>System Instructions</legend>
-        <textarea id="prompt-template" name="prompt-template" rows="12" style="width: 100%;"></textarea>
-      </fieldset>
-
-      <div id="improve-section" class="improve-section">
-        <label for="show-advanced-improve">
-          <input type="checkbox" id="show-advanced-improve">
-          Show Advanced options for Improve-My-Response button
-        </label>
-      </div>
-
-      <button type="submit" id="save-button" class="primary-button">Save</button>
-    </form>
+      </section>
+      <section id="guide" class="tab-content" role="tabpanel">
+        <h1 class="page-title">User Guide</h1>
+        <p>Use the extension to generate AI suggested replies for your chats.</p>
+        <ol>
+          <li>Open WhatsApp Web.</li>
+          <li>Select a chat and type a message.</li>
+          <li>Click the AI button to receive suggestions.</li>
+        </ol>
+      </section>
+      <section id="about" class="tab-content" role="tabpanel">
+        <h1 class="page-title">About</h1>
+        <p>This open-source extension suggests replies using multiple AI providers.</p>
+      </section>
+      <section id="bugs" class="tab-content" role="tabpanel">
+        <h1 class="page-title">Bug / Feature Request</h1>
+        <p>Found an issue or have an idea? Visit our project page on <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a> to open an issue.</p>
+      </section>
+      <section id="help" class="tab-content" role="tabpanel">
+        <h1 class="page-title">Help</h1>
+        <p>Check the <a href="https://chrome.google.com/webstore/detail/chatgpt-answers-for-whats/bmbidjjfpkmlddlbkljbphdgpnjnpogk" target="_blank" rel="noopener">extension listing</a> for details and support.</p>
+      </section>
+    </main>
   </div>
-
-  <div id="history-panel">
-    <div class="history-header">
-      <h2>LLM Call History</h2>
-      <button id="download-csv" class="primary-button">Download CSV</button>
-    </div>
-    <div class="history-table-wrapper">
-      <table id="history-table">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Model</th>
-            <th>Chat History</th>
-            <th>Completion Tokens</th>
-            <th>Total Tokens</th>
-            <th>Response Time (ms)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<script type="module" src="options.js"></script>
+  <script type="module" src="options.js"></script>
 </body>
 </html>
