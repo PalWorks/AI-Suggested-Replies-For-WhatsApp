@@ -1,6 +1,8 @@
-(() => {
+(async () => {
   // contentScript.js - version 2025-08-05T00:44:54Z
   'use strict';
+  const {extensionEnabled = true} = await chrome.storage.local.get({extensionEnabled: true});
+  if (!extensionEnabled) return;
   if (window.__gptContentScriptLoaded) return;
   window.__gptContentScriptLoaded = true;
 

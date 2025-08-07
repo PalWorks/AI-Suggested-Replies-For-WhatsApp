@@ -21,7 +21,7 @@
       "48": "icons/Smart Replies for WhatsApp - PNG 48x48.png",
       "128": "icons/Smart Replies for WhatsApp - PNG 128x128.png"
     },
-    "default_popup": "options/options.html"
+    "default_popup": "popup.html"
   },
   "options_page": "options/options.html",
     "permissions": [
