@@ -21,6 +21,8 @@
   --wa-nav-subtitle-dark: var(--nav-subtext-dark);
   --wa-divider-dark: var(--divider-dark);
   --wa-accent: var(--accent);
+  --input-border-light: #d1d7db;
+  --input-border-dark: #2a3942;
 }
 
 body {
@@ -109,6 +111,8 @@ body {
   background: var(--sidebar-bg-light);
   border-right: 1px solid var(--divider-light);
   overflow-y: auto;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -133,8 +137,9 @@ body {
   cursor: pointer;
   color: var(--nav-text-light);
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .nav-item:hover {
@@ -146,24 +151,15 @@ body {
   font-weight: 600;
 }
 
-.nav-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.nav-text {
-  display: flex;
-  flex-direction: column;
-}
-
 .nav-title {
   font-size: 16px;
+  font-weight: 600;
 }
 
-.nav-subtitle {
-  font-size: 13px;
-  color: var(--nav-subtext-light);
-}
+  .nav-subtitle {
+    font-size: 13px;
+    color: var(--nav-subtext-light);
+  }
 
 @media (prefers-color-scheme: dark) {
   .nav-item {
@@ -183,6 +179,8 @@ body {
   background: var(--main-bg-light);
   padding: 32px;
   overflow: auto;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -207,9 +205,18 @@ body {
 
 input,
 select,
-textarea,
+textarea {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 2px solid var(--input-border-light);
+  background: var(--wa-bg-main-light);
+  color: var(--wa-nav-text-light);
+  font-family: inherit;
+  font-size: 15px;
+}
+
 button {
-  padding: 10px;
+  padding: 10px 14px;
   border-radius: 6px;
   border: 1px solid var(--wa-divider-light);
   background: var(--wa-bg-main-light);
@@ -221,7 +228,11 @@ button {
 @media (prefers-color-scheme: dark) {
   input,
   select,
-  textarea,
+  textarea {
+    background: var(--wa-bg-main-dark);
+    color: var(--wa-nav-text-dark);
+    border-color: var(--input-border-dark);
+  }
   button {
     background: var(--wa-bg-main-dark);
     color: var(--wa-nav-text-dark);
@@ -234,9 +245,10 @@ button {
   color: #fff;
   border: none;
   cursor: pointer;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 6px;
   width: auto;
+  font-weight: 600;
 }
 
 .history-header {
@@ -332,6 +344,24 @@ input.error {
   input.error {
     border-color: #a61b29;
   }
+}
+
+.wide-input {
+  width: 400px;
+}
+
+.monospace {
+  font-family: monospace;
+}
+
+#show-advanced-improve {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+#save-button {
+  margin-top: 24px;
 }
 
 .provider-model-row {
