@@ -38,6 +38,14 @@ style.textContent = `
     --message-spinner-border: rgba(255, 255, 255, 0.1);
     --message-spinner-top: #d1d7db;
   }
+
+  .wa-reply-btn {
+    background: #fafafa !important;
+  }
+
+  .wa-reply-btn:disabled {
+    background: #fafafa !important;
+  }
 }
 
 .gptbtn {
