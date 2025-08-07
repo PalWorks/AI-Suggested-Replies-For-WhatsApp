@@ -125,8 +125,28 @@ style.textContent = `
   font-size: 14px;
 }
 
-.gpt-error-banner .gpt-error-close {
+.gpt-error-banner .gpt-error-actions {
+  display: flex;
+  gap: 8px;
   margin-left: 12px;
+}
+
+.gpt-error-banner .gpt-error-retry {
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.gpt-error-banner .gpt-error-retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gpt-error-banner .gpt-error-close {
   cursor: pointer;
   font-weight: bold;
   background: transparent;
@@ -165,12 +185,27 @@ document.head.appendChild(style);
     errorBanner.className = 'gpt-error-banner';
     const msgSpan = document.createElement('span');
     msgSpan.textContent = message;
+    const actions = document.createElement('span');
+    actions.className = 'gpt-error-actions';
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'gpt-error-retry';
+    retryBtn.textContent = 'Retry';
+    retryBtn.addEventListener('click', () => {
+      if (retryBtn.disabled) return;
+      retryBtn.disabled = true;
+      hideErrorBanner();
+      if (lastPrompt && lastButtonObject) {
+        sendPrompt(lastPrompt, lastButtonObject);
+      }
+    });
     const closeBtn = document.createElement('button');
     closeBtn.className = 'gpt-error-close';
     closeBtn.textContent = '\u00d7';
     closeBtn.addEventListener('click', hideErrorBanner);
+    actions.appendChild(retryBtn);
+    actions.appendChild(closeBtn);
     errorBanner.appendChild(msgSpan);
-    errorBanner.appendChild(closeBtn);
+    errorBanner.appendChild(actions);
     newFooterParagraph.parentNode.insertBefore(errorBanner, newFooterParagraph);
   }
 
@@ -272,10 +307,33 @@ let globalGptButtonObject;
 let globalImproveButtonObject;
 let activeButtonObject; // Tracks which button initiated the current request
 let showAdvancedImprove = false;
+let lastPrompt;
+let lastButtonObject;
 
 // Helper to call the provided callback without extra confirmation
 function withPermission(callback) {
   callback();
+}
+
+function sendPrompt(prompt, buttonObject) {
+  lastPrompt = prompt;
+  lastButtonObject = buttonObject;
+  activeButtonObject = buttonObject;
+  buttonObject.setBusy(true);
+  startLoaderTimeout();
+  streamingText = '';
+  writeTextToSuggestionField('', true);
+  chrome.runtime.sendMessage(
+    {
+      message: 'sendChatToGpt',
+      prompt
+    },
+    response => {
+      if (chrome.runtime.lastError || !response) {
+        handleMessagingError();
+      }
+    }
+  );
 }
 
 // Triggered when the main "Suggest Response" button is clicked
@@ -325,19 +383,7 @@ async function improveButtonClicked() {
       if (instructions) parts.push(`Additional instructions: ${instructions}`);
       parts.push(`\nChat history:\n${chatHistoryShort}\n\nMy draft:\n${userDraft}`);
       const prompt = parts.join('\n');
-        activeButtonObject = globalImproveButtonObject;
-        activeButtonObject.setBusy(true);
-        startLoaderTimeout();
-        streamingText = '';
-        writeTextToSuggestionField('', true);
-        chrome.runtime.sendMessage({
-          message: 'sendChatToGpt',
-          prompt
-        }, response => {
-          if (chrome.runtime.lastError || !response) {
-            handleMessagingError();
-          }
-        });
+      sendPrompt(prompt, globalImproveButtonObject);
     } else {
       const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
       const result = await new Promise(resolve => {
@@ -347,19 +393,7 @@ async function improveButtonClicked() {
       });
       const template = result.promptTemplate;
       const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
-        activeButtonObject = globalImproveButtonObject;
-        activeButtonObject.setBusy(true);
-        startLoaderTimeout();
-        streamingText = '';
-        writeTextToSuggestionField('', true);
-        chrome.runtime.sendMessage({
-          message: 'sendChatToGpt',
-          prompt
-        }, response => {
-          if (chrome.runtime.lastError || !response) {
-            handleMessagingError();
-          }
-        });
+      sendPrompt(prompt, globalImproveButtonObject);
     }
   });
 }
@@ -418,20 +452,8 @@ function injectUI(mainNode) {
     // Removed legacy privacy notice to streamline the suggestion bar UI
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
-        let prompt = await createPrompt(lastIsMine, chatHistoryShort);
-          activeButtonObject = gptButtonObject;
-          activeButtonObject.setBusy(true);
-          startLoaderTimeout();
-          streamingText = '';
-          writeTextToSuggestionField('', true);
-          chrome.runtime.sendMessage({
-              message: 'sendChatToGpt',
-              prompt: prompt
-          }, response => {
-              if (chrome.runtime.lastError || !response) {
-                  handleMessagingError();
-              }
-          });
+        const prompt = await createPrompt(lastIsMine, chatHistoryShort);
+        sendPrompt(prompt, gptButtonObject);
     };
   const gptButton = gptButtonObject.gptButton;
   gptButton.addEventListener('click', () => {
