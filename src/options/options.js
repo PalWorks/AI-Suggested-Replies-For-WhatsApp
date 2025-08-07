@@ -3,6 +3,7 @@ import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   renderHistory();
+  setupNavigation();
 });
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
@@ -238,5 +239,40 @@ function refreshWhatsAppTabs() {
         }
       });
     }
+  });
+}
+
+function setupNavigation() {
+  const navItems = document.querySelectorAll('.nav-item');
+  const sections = document.querySelectorAll('.tab-content');
+  const sidebar = document.getElementById('sidebar');
+  const menuToggle = document.getElementById('menu-toggle');
+
+  function showTab(id) {
+    sections.forEach(sec => {
+      sec.classList.toggle('active', sec.id === id);
+    });
+    navItems.forEach(item => {
+      const active = item.dataset.tab === id;
+      item.classList.toggle('active', active);
+      if (active) {
+        item.setAttribute('aria-current', 'page');
+      } else {
+        item.removeAttribute('aria-current');
+      }
+    });
+  }
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      showTab(item.dataset.tab);
+      if (window.innerWidth <= 600) {
+        sidebar.classList.remove('open');
+      }
+    });
+  });
+
+  menuToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
   });
 }
