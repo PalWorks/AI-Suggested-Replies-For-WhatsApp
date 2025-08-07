@@ -22,32 +22,67 @@ function createGptButton(label = 'Suggest Response', id) {
   };
 }
 
-function createButton(pathVariable, title) {
-    const buttonElement = document.createElement("button");
-    buttonElement.innerHTML = "<button class=\"svlsagor\"><span><svg viewBox=\"0 0 24 24\" height=\"24\" width=\"24\" preserveAspectRatio=\"xMidYMid meet\"><path fill=\"green\"></path></svg></span></button>";
-    buttonElement.querySelector('path').setAttribute('d', pathVariable)
-    buttonElement.setAttribute('title', title)
-    return buttonElement;
-}
-
 function createButtonEmpty(title) {
     const buttonElement = document.createElement("button");
-    buttonElement.innerHTML = "<button class=\"svlsagor\"><span><svg viewBox=\"0 0 24 24\" height=\"24\" width=\"24\" preserveAspectRatio=\"xMidYMid meet\"></svg></span></button>";
-    buttonElement.setAttribute('title', title)
-    const svg = buttonElement.querySelector('svg')
+    buttonElement.innerHTML = "<button class=\"svlsagor\"><span><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" preserveAspectRatio=\"xMidYMid meet\"></svg></span></button>";
+    buttonElement.setAttribute('title', title);
+    const svg = buttonElement.querySelector('svg');
+    const inner = buttonElement.querySelector('button');
+    if (inner) {
+      inner.style.display = 'flex';
+      inner.style.alignItems = 'center';
+      inner.style.justifyContent = 'center';
+      inner.style.width = '24px';
+      inner.style.height = '24px';
+      inner.style.padding = '0';
+      inner.style.border = 'none';
+      inner.style.background = 'transparent';
+    }
     return {svg, buttonElement};
 }
 
 function createAndAddOptionsButton(newButtonContainer) {
-    const optionsButton = createButton('m9.25 22-.4-3.2q-.325-.125-.612-.3-.288-.175-.563-.375L4.7 19.375l-2.75-4.75 2.575-1.95Q4.5 12.5 4.5 12.337v-.675q0-.162.025-.337L1.95 9.375l2.75-4.75 2.975 1.25q.275-.2.575-.375.3-.175.6-.3l.4-3.2h5.5l.4 3.2q.325.125.613.3.287.175.562.375l2.975-1.25 2.75 4.75-2.575 1.95q.025.175.025.337v.675q0 .163-.05.338l2.575 1.95-2.75 4.75-2.95-1.25q-.275.2-.575.375-.3.175-.6.3l-.4 3.2Zm2.8-6.5q1.45 0 2.475-1.025Q15.55 13.45 15.55 12q0-1.45-1.025-2.475Q13.5 8.5 12.05 8.5q-1.475 0-2.488 1.025Q8.55 10.55 8.55 12q0 1.45 1.012 2.475Q10.575 15.5 12.05 15.5Zm0-2q-.625 0-1.062-.438-.438-.437-.438-1.062t.438-1.062q.437-.438 1.062-.438t1.063.438q.437.437.437 1.062t-.437 1.062q-.438.438-1.063.438ZM12 12Zm-1 8h1.975l.35-2.65q.775-.2 1.438-.588.662-.387 1.212-.937l2.475 1.025.975-1.7-2.15-1.625q.125-.35.175-.738.05-.387.05-.787t-.05-.788q-.05-.387-.175-.737l2.15-1.625-.975-1.7-2.475 1.05q-.55-.575-1.212-.963-.663-.387-1.438-.587L13 4h-1.975l-.35 2.65q-.775.2-1.437.587-.663.388-1.213.938L5.55 7.15l-.975 1.7 2.15 1.6q-.125.375-.175.75-.05.375-.05.8 0 .4.05.775t.175.75l-2.15 1.625.975 1.7 2.475-1.05q.55.575 1.213.962.662.388 1.437.588Z', 'Options');
-    optionsButton.addEventListener('click', () => {
-        chrome.runtime.sendMessage({action: 'openOptionsPage'}, response => {
-            if (chrome.runtime.lastError || !response) {
-                console.error('Failed to open options page', chrome.runtime.lastError);
-            }
-        });
+  const {
+    svg: svgElement,
+    buttonElement: optionsButton
+  } = createButtonEmpty('Options');
+  fetch(chrome.runtime.getURL('icons/Settings Gear.svg'))
+    .then(r => r.text())
+    .then(svg => {
+      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      const circle = doc.querySelector('circle');
+      const path = doc.querySelector('path');
+      svgElement.setAttribute('viewBox', '0 0 24 24');
+      if (circle) {
+        circle.setAttribute('stroke', 'currentColor');
+        circle.setAttribute('stroke-width', '1.5');
+        svgElement.appendChild(circle);
+      }
+      if (path) {
+        path.setAttribute('stroke', 'currentColor');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svgElement.appendChild(path);
+      }
     });
-    newButtonContainer.appendChild(optionsButton);
+  const theme = window.matchMedia('(prefers-color-scheme: dark)');
+  const innerBtn = optionsButton.querySelector('button');
+  function applyIconColor() {
+    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
+    optionsButton.style.color = color;
+    if (innerBtn) innerBtn.style.color = color;
+  }
+  applyIconColor();
+  theme.addEventListener('change', applyIconColor);
+  optionsButton.addEventListener('click', () => {
+    chrome.runtime.sendMessage({action: 'openOptionsPage'}, response => {
+      if (chrome.runtime.lastError || !response) {
+        console.error('Failed to open options page', chrome.runtime.lastError);
+      }
+    });
+  });
+  newButtonContainer.appendChild(optionsButton);
 }
 
 function creatCopyButton(newFooter, newButtonContainer) {
@@ -59,11 +94,11 @@ function creatCopyButton(newFooter, newButtonContainer) {
     .then(r => r.text())
     .then(svg => {
       const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-      const paths = doc.querySelectorAll('path');
-      svgElement.setAttribute('viewBox', '0 0 16 16');
-      svgElement.setAttribute('width', '20');
-      svgElement.setAttribute('height', '20');
-      paths.forEach(path => {
+      const svgNode = doc.querySelector('svg');
+      if (!svgNode) return;
+      const viewBox = svgNode.getAttribute('viewBox') || '0 0 16 16';
+      svgElement.setAttribute('viewBox', viewBox);
+      svgNode.querySelectorAll('path').forEach(path => {
         path.setAttribute('fill', 'currentColor');
         svgElement.appendChild(path);
       });
@@ -71,14 +106,12 @@ function creatCopyButton(newFooter, newButtonContainer) {
   const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = copyButton.querySelector('button');
   function applyIconColor() {
-    const color = theme.matches ? '#E9EDEF' : '#54656F';
+    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
     copyButton.style.color = color;
     if (innerBtn) innerBtn.style.color = color;
   }
   applyIconColor();
   theme.addEventListener('change', applyIconColor);
-  newFooter.querySelectorAll('.selectable-text.copyable-text')[0];
-  copyButton.style.marginRight = '10px';
   newButtonContainer.appendChild(copyButton);
   return copyButton;
 }
@@ -92,17 +125,19 @@ function createDeleteButton(newFooter, newButtonContainer) {
     .then(r => r.text())
     .then(svg => {
       const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-      const path = doc.querySelector('path');
-      if (path) {
+      const svgNode = doc.querySelector('svg');
+      if (!svgNode) return;
+      const viewBox = svgNode.getAttribute('viewBox') || '0 0 20 20';
+      svgElement.setAttribute('viewBox', viewBox);
+      svgNode.querySelectorAll('path').forEach(path => {
         path.setAttribute('fill', 'currentColor');
-        svgElement.setAttribute('viewBox', '0 0 20 20');
         svgElement.appendChild(path);
-      }
+      });
     });
   const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = deleteButton.querySelector('button');
   function applyIconColor() {
-    const color = theme.matches ? '#E9EDEF' : '#54656F';
+    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
     deleteButton.style.color = color;
     if (innerBtn) innerBtn.style.color = color;
   }
