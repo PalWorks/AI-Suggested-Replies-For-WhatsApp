@@ -1,5 +1,5 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel} from './utils.js';
+import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel, fetchWithTimeout} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
@@ -69,7 +69,7 @@ async function sendLLM(prompt, tabId) {
     const apiKey = await getApiKey(apiChoice);
     if (!apiKey) {
       const msg = 'Please set your API key in the extension options.';
-      chrome.tabs.sendMessage(tabId, {type: 'error', data: msg});
+      chrome.tabs.sendMessage(tabId, {type: 'error', error: msg});
       showToast(msg);
       return;
     }
@@ -116,13 +116,21 @@ async function sendLLM(prompt, tabId) {
       method: 'POST',
       headers,
       body
-    }, 3, [500, 1000, 2000], fetch, logToGitHub);
+    }, 3, [500, 1000, 2000], fetchWithTimeout, logToGitHub);
 
     let usage;
 
     if (apiChoice === 'anthropic') {
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '';
+      const data = await response.json().catch(() => {
+        throw new Error('Unexpected API response');
+      });
+      if (data.error) {
+        throw new Error(data.error.message || data.error);
+      }
+      const text = data.content?.[0]?.text;
+      if (!text) {
+        throw new Error('Unexpected API response');
+      }
       usage = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
@@ -159,8 +167,16 @@ async function sendLLM(prompt, tabId) {
       }
       chrome.tabs.sendMessage(tabId, {type: 'done'});
     } else {
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
+      const data = await response.json().catch(() => {
+        throw new Error('Unexpected API response');
+      });
+      if (data.error) {
+        throw new Error(data.error.message || data.error);
+      }
+      const text = data.choices?.[0]?.message?.content;
+      if (!text) {
+        throw new Error('Unexpected API response');
+      }
       usage = data.usage;
       chrome.tabs.sendMessage(tabId, {
         message: 'gptResponse',
@@ -184,9 +200,21 @@ async function sendLLM(prompt, tabId) {
       responseTime: endTime - startTime
     });
   } catch (err) {
-    chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
-    showToast(err.message);
-    logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
+    let msg;
+    if (err.name === 'AbortError') {
+      msg = 'Request timed out';
+    } else if (/^HTTP 401/.test(err.message)) {
+      msg = 'Invalid API key';
+    } else if (/^HTTP/.test(err.message) || /Failed to fetch/i.test(err.message)) {
+      msg = 'Network error';
+    } else if (err.message === 'Unexpected API response') {
+      msg = 'Unexpected API response';
+    } else {
+      msg = `Unknown error: ${err.message}`;
+    }
+    chrome.tabs.sendMessage(tabId, {type: 'error', error: msg});
+    showToast(msg);
+    logToGitHub(`LLM request failed: ${msg}\n${err.stack || ''}`).catch(() => {});
   }
 }
 
