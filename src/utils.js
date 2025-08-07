@@ -33,6 +33,16 @@ export function b64ToBuf(b64) {
   return Uint8Array.from(Buffer.from(b64, 'base64'));
 }
 
+export async function fetchWithTimeout(resource, options = {}, timeout = 20000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    return await fetch(resource, {...options, signal: controller.signal});
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export async function fetchWithRetry(
   url,
   options,
