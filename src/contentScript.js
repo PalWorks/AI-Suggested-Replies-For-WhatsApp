@@ -85,7 +85,7 @@ style.textContent = `
 }
 
 .wa-reply-btn {
-  border-radius: 22px !important;
+  border-radius: 42px !important;
   background: #fff !important;
   color: #222 !important;
   font-weight: 400 !important;
