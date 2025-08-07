@@ -368,10 +368,28 @@ input.error {
   font-family: monospace;
 }
 
+.api-key-input {
+  min-width: 420px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.system-instructions-textarea {
+  min-width: 420px;
+  width: 100%;
+  max-width: 600px;
+  min-height: 160px;
+}
+
 #show-advanced-improve {
   width: 20px;
   height: 20px;
   margin-right: 8px;
+}
+
+.improve-section label {
+  display: flex;
+  align-items: center;
 }
 
 #save-button {
