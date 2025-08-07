@@ -105,20 +105,28 @@ export function showToast(message) {
   } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
     try {
       chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        if (tabs[0] && tabs[0].id !== undefined) {
-          chrome.tabs.sendMessage(tabs[0].id, {type: 'showToast', message});
-        }
-      });
-    } catch (e) {
-      // ignore messaging errors
+          if (tabs[0] && tabs[0].id !== undefined) {
+            chrome.tabs.sendMessage(tabs[0].id, {type: 'showToast', message}, () => {
+              if (chrome.runtime.lastError) {
+                console.error('Failed to send toast to tab', chrome.runtime.lastError);
+              }
+            });
+          }
+        });
+      } catch (e) {
+        // ignore messaging errors
+      }
+    } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        chrome.runtime.sendMessage({type: 'showToast', message}, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Failed to send toast message', chrome.runtime.lastError);
+          }
+        });
+      } catch (e) {
+        // ignore runtime errors
+      }
+    } else {
+      console.log(message);
     }
-  } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-    try {
-      chrome.runtime.sendMessage({type: 'showToast', message});
-    } catch (e) {
-      // ignore runtime errors
-    }
-  } else {
-    console.log(message);
   }
-}
