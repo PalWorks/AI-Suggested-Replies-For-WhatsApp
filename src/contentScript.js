@@ -113,6 +113,29 @@ style.textContent = `
   white-space: pre-wrap;
 }
 
+.gpt-error-banner {
+  background: #dc2626;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.gpt-error-banner .gpt-error-close {
+  margin-left: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -125,6 +148,31 @@ style.textContent = `
 /* message spinner removed; buttons now show their own loader */
 `;
 document.head.appendChild(style);
+
+  let errorBanner;
+
+  function hideErrorBanner() {
+    if (errorBanner) {
+      errorBanner.remove();
+      errorBanner = null;
+    }
+  }
+
+  function showErrorBanner(message) {
+    hideErrorBanner();
+    if (!newFooterParagraph) return;
+    errorBanner = document.createElement('div');
+    errorBanner.className = 'gpt-error-banner';
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'gpt-error-close';
+    closeBtn.textContent = '\u00d7';
+    closeBtn.addEventListener('click', hideErrorBanner);
+    errorBanner.appendChild(msgSpan);
+    errorBanner.appendChild(closeBtn);
+    newFooterParagraph.parentNode.insertBefore(errorBanner, newFooterParagraph);
+  }
 
   let streamingText = '';
   let loaderTimeoutId;
@@ -223,6 +271,7 @@ function withPermission(callback) {
 // Triggered when the main "Suggest Response" button is clicked
 function gptButtonClicked() {
   withPermission(() => {
+    hideErrorBanner();
     triggerEvent();
   });
 }
@@ -250,6 +299,7 @@ async function improveButtonClicked() {
     return;
   }
   withPermission(async () => {
+    hideErrorBanner();
     const {chatHistoryShort} = extractConversation(globalMainNode);
     if (showAdvancedImprove) {
       const dialogResult = await showImproveDialog(chatHistoryShort, draft);
@@ -444,21 +494,26 @@ async function writeTextToSuggestionField(response, isLoading = false) {
       clearLoaderTimeout();
     }
     if (request.type === 'token') {
+      hideErrorBanner();
       streamingText += request.data;
       writeTextToSuggestionField(streamingText);
     } else if (request.type === 'done') {
       if (activeButtonObject) activeButtonObject.setBusy(false);
     } else if (request.type === 'error') {
       if (activeButtonObject) activeButtonObject.setBusy(false);
-      writeTextToSuggestionField(request.data || 'Failed to generate reply');
-      if (showToast) showToast(request.data || 'Failed to generate reply');
+      writeTextToSuggestionField('');
+      const msg = request.error || request.data || 'Failed to generate reply';
+      showErrorBanner(msg);
+      if (showToast) showToast(msg);
     } else if (request.type === 'showToast') {
       if (showToast) showToast(request.message);
     } else if (request.message === 'gptResponse') {
+      hideErrorBanner();
       const response = request.response;
       if (activeButtonObject) activeButtonObject.setBusy(false);
       if (response.error !== null && response.error !== undefined) {
-        writeTextToSuggestionField(response.error.message);
+        writeTextToSuggestionField('');
+        showErrorBanner(response.error.message);
         return;
       }
       writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
