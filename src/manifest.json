@@ -42,7 +42,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["utils.js"],
+      "resources": ["utils.js", "icons/*.png", "icons/*.svg"],
       "matches": ["https://web.whatsapp.com/*"]
     }
   ]

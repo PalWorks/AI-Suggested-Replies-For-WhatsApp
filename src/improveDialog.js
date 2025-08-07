@@ -1,11 +1,11 @@
-let improveDialogVisible = false;
+window.improveDialogVisible = window.improveDialogVisible || false;
 
 function showImproveDialog(chatHistory, draft) {
-  if (improveDialogVisible) {
+  if (window.improveDialogVisible) {
     return Promise.resolve(null);
   }
   return new Promise(resolve => {
-    improveDialogVisible = true;
+    window.improveDialogVisible = true;
     const overlay = document.createElement('div');
     overlay.id = 'improveDialogOverlay';
     // Build dialog markup styled like native WhatsApp popups.
@@ -251,7 +251,7 @@ function showImproveDialog(chatHistory, draft) {
 
     function cleanup() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      improveDialogVisible = false;
+      window.improveDialogVisible = false;
     }
 
     generateBtn.addEventListener('click', () => {
