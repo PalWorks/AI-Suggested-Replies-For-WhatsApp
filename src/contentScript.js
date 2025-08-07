@@ -23,20 +23,16 @@ const style = document.createElement('style');
 style.textContent = `
 /* Theme variables */
 :root {
-  --gpt-btn-bg: #007bff;
-  --gpt-btn-text: #fff;
-  --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
-  --gpt-btn-spinner-top: #fff;
+  --gpt-btn-spinner-border: rgba(0, 0, 0, 0.1);
+  --gpt-btn-spinner-top: #54656F;
   --message-spinner-border: rgba(0, 0, 0, 0.1);
   --message-spinner-top: #54656F;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --gpt-btn-bg: #0056b3;
-    --gpt-btn-text: #fff;
-    --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
-    --gpt-btn-spinner-top: #fff;
+    --gpt-btn-spinner-border: rgba(255, 255, 255, 0.1);
+    --gpt-btn-spinner-top: #d1d7db;
     --message-spinner-border: rgba(255, 255, 255, 0.1);
     --message-spinner-top: #d1d7db;
   }
@@ -51,10 +47,6 @@ style.textContent = `
   font-size: 16px;
   font-weight: bold;
   text-decoration: none;
-  color: var(--gpt-btn-text);
-  background-color: var(--gpt-btn-bg);
-  border: none;
-  border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
@@ -90,6 +82,25 @@ style.textContent = `
 .gptbtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.wa-reply-btn {
+  border-radius: 22px !important;
+  background: #fff !important;
+  color: #222 !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+  border: 1.5px solid #e2e2e2 !important;
+  box-shadow: none;
+  padding: 6px 20px !important;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.wa-reply-btn:hover,
+.wa-reply-btn:focus {
+  background: #e7f6ee !important;
+  color: #075e54 !important;
+  border-color: #b3e2cd !important;
 }
 
 .gpt-message {
@@ -185,28 +196,9 @@ let globalImproveButtonObject;
 let activeButtonObject; // Tracks which button initiated the current request
 let showAdvancedImprove = false;
 
-// Helper to ask for user consent before sending messages to the LLM
+// Helper to call the provided callback without extra confirmation
 function withPermission(callback) {
-  chrome.storage.local.get({
-    askedForPermission: false,
-  }, result => {
-    if (!result.askedForPermission) {
-      const message = "<ul>" +
-        "<li>The last 10 messages of your chat-conversation will be sent to openai, each time you press this button.</li>" +
-        "<li>They are handled by openai according to their <a href='https://openai.com/policies/api-data-usage-policies' target='_blank'>api-documentation</a> and <a href='https://openai.com/policies/privacy-policy' target='_blank'>privacy policy</a>.</li>" +
-        "<li>This is less secure than the end-to-end encryption that <a href='https://faq.whatsapp.com/820124435853543/?helpref=uf_share' target='_blank'>WhatsApp(tm) uses</a>.</li>" +
-        "</ul><br><br>" +
-        "<p style=\"display: inline-block; text-align: center; width: 100%;\">Are you ok with that?</p>";
-      confirmDialog(message).then(res => {
-        if (res) {
-          chrome.storage.local.set({askedForPermission: true});
-          callback();
-        }
-      });
-    } else {
-      callback();
-    }
-  });
+  callback();
 }
 
 // Triggered when the main "Suggest Response" button is clicked

@@ -2,7 +2,7 @@
 import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel} from './utils.js';
 import {logToGitHub} from './logger.js';
 
-const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
+const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
 
 let decryptedApiKeys = {};
 

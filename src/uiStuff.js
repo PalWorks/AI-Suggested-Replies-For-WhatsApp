@@ -6,40 +6,7 @@ function createGptButton(label = 'Suggest Response', id) {
   gptButton.type = 'button';
   gptButton.id = id || '';
   gptButton.innerHTML = `<span class="gptbtn-text">${label}</span><span class="spinner"></span>`;
-  gptButton.className = 'gptbtn';
-
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const baseBg = prefersDark ? '#005C4B' : '#D9FDD3';
-  const hoverBg = prefersDark ? '#1F7767' : '#BCE5A7';
-  const textColor = prefersDark ? '#E9EDEF' : '#54656F';
-
-  gptButton.style.backgroundColor = baseBg;
-  gptButton.style.color = textColor;
-  gptButton.style.padding = '10px';
-  gptButton.style.border = 'none';
-  gptButton.style.borderRadius = '5px';
-
-  // Add hover effect
-  gptButton.style.transition = 'background-color 0.3s ease';
-
-  gptButton.addEventListener('mouseover', () => {
-    gptButton.style.backgroundColor = hoverBg;
-  });
-
-  gptButton.addEventListener('mouseout', () => {
-    gptButton.style.backgroundColor = baseBg;
-  });
-
-  // Add pressed effect
-  gptButton.style.boxShadow = 'inset 0 0 5px rgba(0, 0, 0, 0.2)';
-
-  gptButton.addEventListener('mousedown', () => {
-    gptButton.style.boxShadow = 'inset 0 0 10px rgba(0, 0, 0, 0.4)';
-  });
-
-  gptButton.addEventListener('mouseup', () => {
-    gptButton.style.boxShadow = 'inset 0 0 5px rgba(0, 0, 0, 0.2)';
-  });
+  gptButton.className = 'gptbtn wa-reply-btn';
   return {
     gptButton,
     setBusy(value) {

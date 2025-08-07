@@ -230,7 +230,7 @@ async function downloadCsv() {
 }
 
 function refreshWhatsAppTabs() {
-  const files = ['parser.js', 'uiStuff.js', 'confirmDialog.js', 'improveDialog.js', 'contentScript.js'];
+  const files = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
   chrome.tabs.query({url: 'https://web.whatsapp.com/*'}, tabs => {
     for (const tab of tabs) {
       chrome.scripting.executeScript({target: {tabId: tab.id}, files}, () => {
