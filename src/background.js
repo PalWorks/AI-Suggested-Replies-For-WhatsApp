@@ -1,5 +1,5 @@
 // background.js - version 2025-08-05T00:44:54Z
-import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel} from './utils.js';
+import {b64ToBuf, fetchWithRetry, showToast, getDefaultModel, fetchWithTimeout} from './utils.js';
 import {logToGitHub} from './logger.js';
 
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
@@ -116,7 +116,7 @@ async function sendLLM(prompt, tabId) {
       method: 'POST',
       headers,
       body
-    }, 3, [500, 1000, 2000], fetch, logToGitHub);
+    }, 3, [500, 1000, 2000], fetchWithTimeout, logToGitHub);
 
     let usage;
 
@@ -184,9 +184,10 @@ async function sendLLM(prompt, tabId) {
       responseTime: endTime - startTime
     });
   } catch (err) {
-    chrome.tabs.sendMessage(tabId, {type: 'error', data: err.message});
-    showToast(err.message);
-    logToGitHub(`LLM request failed: ${err.message}\n${err.stack || ''}`).catch(() => {});
+    const msg = err.name === 'AbortError' ? 'Request timed out' : err.message;
+    chrome.tabs.sendMessage(tabId, {type: 'error', data: msg, error: msg});
+    showToast(msg);
+    logToGitHub(`LLM request failed: ${msg}\n${err.stack || ''}`).catch(() => {});
   }
 }
 
