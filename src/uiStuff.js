@@ -71,6 +71,36 @@ function creatCopyButton(newFooter, newButtonContainer) {
   return copyButton;
 }
 
+function createDeleteButton(newFooter, newButtonContainer) {
+  const {
+    svg: svgElement,
+    buttonElement: deleteButton
+  } = createButtonEmpty('Delete suggestion');
+  fetch(chrome.runtime.getURL('icons/DeleteBin.svg'))
+    .then(r => r.text())
+    .then(svg => {
+      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      const path = doc.querySelector('path');
+      if (path) {
+        path.setAttribute('fill', 'currentColor');
+        svgElement.setAttribute('viewBox', '0 0 20 20');
+        svgElement.appendChild(path);
+      }
+    });
+  const theme = window.matchMedia('(prefers-color-scheme: dark)');
+  const innerBtn = deleteButton.querySelector('button');
+  function applyIconColor() {
+    const color = theme.matches ? '#E9EDEF' : '#54656F';
+    deleteButton.style.color = color;
+    if (innerBtn) innerBtn.style.color = color;
+  }
+  applyIconColor();
+  theme.addEventListener('change', applyIconColor);
+  deleteButton.style.display = 'none';
+  newButtonContainer.appendChild(deleteButton);
+  return deleteButton;
+}
+
 function createGptFooter(footer, mainNode) {
     // Clone the footer and get the main container
     const newFooter = footer.cloneNode(true);
@@ -118,6 +148,8 @@ function createGptFooter(footer, mainNode) {
     buttonContainer.appendChild(gptButtonObject.gptButton);
     buttonContainer.appendChild(improveButtonObject.gptButton);
 
+    // Create and add delete button
+    const deleteButton = createDeleteButton(newFooter, buttonContainer2);
     // Create and add copy button
     const copyButton = creatCopyButton(newFooter, buttonContainer2);
 
@@ -156,7 +188,8 @@ function createGptFooter(footer, mainNode) {
         newFooter,
         gptButtonObject,
         improveButtonObject,
-        copyButton
+        copyButton,
+        deleteButton
     };
 }
 
