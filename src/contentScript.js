@@ -23,20 +23,16 @@ const style = document.createElement('style');
 style.textContent = `
 /* Theme variables */
 :root {
-  --gpt-btn-bg: #007bff;
-  --gpt-btn-text: #fff;
-  --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
-  --gpt-btn-spinner-top: #fff;
+  --gpt-btn-spinner-border: rgba(0, 0, 0, 0.1);
+  --gpt-btn-spinner-top: #54656F;
   --message-spinner-border: rgba(0, 0, 0, 0.1);
   --message-spinner-top: #54656F;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --gpt-btn-bg: #0056b3;
-    --gpt-btn-text: #fff;
-    --gpt-btn-spinner-border: rgba(255, 255, 255, 0.3);
-    --gpt-btn-spinner-top: #fff;
+    --gpt-btn-spinner-border: rgba(255, 255, 255, 0.1);
+    --gpt-btn-spinner-top: #d1d7db;
     --message-spinner-border: rgba(255, 255, 255, 0.1);
     --message-spinner-top: #d1d7db;
   }
@@ -51,10 +47,6 @@ style.textContent = `
   font-size: 16px;
   font-weight: bold;
   text-decoration: none;
-  color: var(--gpt-btn-text);
-  background-color: var(--gpt-btn-bg);
-  border: none;
-  border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
@@ -90,6 +82,21 @@ style.textContent = `
 .gptbtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.wa-reply-btn {
+  border-radius: 42px !important;
+  background: #fff !important;
+  color: #111;
+  border: 1px solid #ececec;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.wa-reply-btn:hover,
+.wa-reply-btn:focus {
+  background: #e7f6ee !important;
+  color: #075e54;
 }
 
 .gpt-message {
