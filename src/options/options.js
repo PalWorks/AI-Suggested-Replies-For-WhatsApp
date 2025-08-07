@@ -244,6 +244,7 @@ function refreshWhatsAppTabs() {
 
 function setupNavigation() {
   const navItems = document.querySelectorAll('.nav-item');
+  const iconItems = document.querySelectorAll('.icon-item');
   const sections = document.querySelectorAll('.tab-content');
   const sidebar = document.getElementById('sidebar');
   const menuToggle = document.getElementById('menu-toggle');
@@ -252,7 +253,7 @@ function setupNavigation() {
     sections.forEach(sec => {
       sec.classList.toggle('active', sec.id === id);
     });
-    navItems.forEach(item => {
+    [...navItems, ...iconItems].forEach(item => {
       const active = item.dataset.tab === id;
       item.classList.toggle('active', active);
       if (active) {
@@ -263,7 +264,7 @@ function setupNavigation() {
     });
   }
 
-  navItems.forEach(item => {
+  [...navItems, ...iconItems].forEach(item => {
     item.addEventListener('click', () => {
       showTab(item.dataset.tab);
       if (window.innerWidth <= 600) {

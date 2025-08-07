@@ -9,31 +9,62 @@
 <body>
   <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">☰</button>
   <div class="options-container">
+    <nav class="icon-bar" aria-label="Primary">
+      <ul>
+        <li><button class="icon-item active" data-tab="settings" aria-label="Settings" aria-current="page"><img src="../icons/Settings Gear.svg" alt="Settings icon"></button></li>
+        <li><button class="icon-item" data-tab="history" aria-label="Logs / History"><img src="../icons/Logs.svg" alt="Logs icon"></button></li>
+        <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
+        <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
+        <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
+        <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
+      </ul>
+      <div class="icon-avatar">
+        <img src="../Ext-Icon-1.png" alt="User avatar">
+      </div>
+    </nav>
     <nav id="sidebar" class="sidebar" aria-label="Main">
       <ul>
         <li><button class="nav-item active" data-tab="settings" aria-current="page">
-          <span class="nav-title">Settings</span>
-          <span class="nav-subtitle">Provider &amp; model</span>
+          <img src="../icons/Settings Gear.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">Settings</span>
+            <span class="nav-subtitle">Provider &amp; model</span>
+          </div>
         </button></li>
         <li><button class="nav-item" data-tab="history">
-          <span class="nav-title">Logs / History</span>
-          <span class="nav-subtitle">LLM call log</span>
+          <img src="../icons/Logs.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">Logs / History</span>
+            <span class="nav-subtitle">LLM call log</span>
+          </div>
         </button></li>
         <li><button class="nav-item" data-tab="guide">
-          <span class="nav-title">User Guide</span>
-          <span class="nav-subtitle">How it works</span>
+          <img src="../icons/User Guide.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">User Guide</span>
+            <span class="nav-subtitle">How it works</span>
+          </div>
         </button></li>
         <li><button class="nav-item" data-tab="about">
-          <span class="nav-title">About</span>
-          <span class="nav-subtitle">Extension info</span>
+          <img src="../icons/About.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">About</span>
+            <span class="nav-subtitle">Extension info</span>
+          </div>
         </button></li>
         <li><button class="nav-item" data-tab="bugs">
-          <span class="nav-title">Bug / Feature Request</span>
-          <span class="nav-subtitle">Send feedback</span>
+          <img src="../icons/Bug.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">Bug / Feature Request</span>
+            <span class="nav-subtitle">Send feedback</span>
+          </div>
         </button></li>
         <li><button class="nav-item" data-tab="help">
-          <span class="nav-title">Help</span>
-          <span class="nav-subtitle">Support</span>
+          <img src="../icons/Help.svg" alt="" class="nav-icon">
+          <div class="nav-text">
+            <span class="nav-title">Help</span>
+            <span class="nav-subtitle">Support</span>
+          </div>
         </button></li>
       </ul>
     </nav>
