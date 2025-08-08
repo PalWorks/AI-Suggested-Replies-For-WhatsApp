@@ -46,7 +46,7 @@ function createAndAddOptionsButton(newButtonContainer) {
     svg: svgElement,
     buttonElement: optionsButton
   } = createButtonEmpty('Options');
-  fetch(chrome.runtime.getURL('icons/Settings Gear.svg'))
+  fetch(chrome.runtime.getURL('icons/SettingsGear2.svg'))
     .then(r => r.text())
     .then(svg => {
       const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
