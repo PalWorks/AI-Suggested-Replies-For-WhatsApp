@@ -4,6 +4,35 @@
     showToast = m.showToast;
   });
 
+  // Phrases that correspond to system messages or media placeholders.
+  // These strings are matched case-insensitively and filtered out so the
+  // AI only receives conversational content.
+  const NON_CONVERSATIONAL_PATTERNS = [
+    // Call notifications
+    'missed voice call',
+    'missed video call',
+    // Deleted messages
+    'you deleted this message',
+    'this message was deleted',
+    // Group changes
+    'changed the subject to',
+    'changed the group icon',
+    'group description changed',
+    // Pin/unpin notifications
+    'pinned a message',
+    'unpinned a message',
+    // Encryption notice
+    'messages and calls are end-to-end encrypted.',
+    // Media placeholders
+    'media omitted',
+    'document omitted',
+    'gif omitted',
+    // Business or QR notifications
+    'this chat is with a business account',
+    'qr code scanned',
+    'qr code expired'
+  ];
+
 function parseHtml(main) {
   try {
     const main2 = main;
@@ -30,7 +59,13 @@ function parseHtml(main) {
           }
         }
       });
-      if (messageStringCollector.length !== 0) {
+      const text = messageStringCollector.trim();
+      const lowered = text.toLowerCase();
+      const content = text.replace(/^.*?:\s*/, '').trim();
+      const hasMedia = el.querySelector('img, video, canvas') !== null;
+      const isBlacklisted = NON_CONVERSATIONAL_PATTERNS.some(p => lowered.includes(p));
+      const isMediaOnly = hasMedia && content === '';
+      if (text && !isBlacklisted && !isMediaOnly) {
         chatHistory.push(messageStringCollector);
       }
     });
