@@ -19,7 +19,7 @@
           <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
           <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
           <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
-          <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/Help.svg" alt="Privacy icon"></button></li>
+          <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/privacyicon.svg" alt="Privacy icon"></button></li>
           <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
         </ul>
           <div class="extension-branding">
@@ -90,6 +90,11 @@
             <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
           </fieldset>
 
+          <div class="form-row">
+            <label for="context-message-limit">How many recent messages to send to the LLM as context:</label>
+            <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
+          </div>
+
           <fieldset id="system-instructions">
             <legend>System Instructions</legend>
             <textarea id="prompt-template" name="prompt-template" class="wide-input system-instructions-textarea" rows="12"></textarea>
@@ -100,11 +105,6 @@
                 <input type="checkbox" id="show-advanced-improve">
                 Show Advanced options for Improve-My-Response button
               </label>
-            </div>
-            <div class="form-row">
-              <label for="context-message-limit">Messages to include in context</label>
-              <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
-              <small>How many recent messages to send to the LLM as context.</small>
             </div>
 
             <button type="submit" id="save-button" class="primary-button">Save</button>

@@ -225,7 +225,7 @@ function renderSummary(logs) {
     `Avg Tokens — P:${avg(pTok)} C:${avg(cTok)} T:${avg(tTok)}`
   ];
 
-  el.innerHTML = data.map(txt => `<span class="chip">${txt}</span>`).join('');
+  el.innerHTML = data.map(txt => `<span class="summary-chip">${txt}</span>`).join('');
 }
 
 function formatISOWithTZ(timestamp, timeZone = 'Asia/Kolkata') {
