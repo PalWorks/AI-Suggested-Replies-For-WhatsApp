@@ -1,22 +1,64 @@
 import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../utils.js';
 
-// --- Ensure theme flag is set based on OS preference and kept in sync ---
-(function ensureThemeFlag() {
-  const apply = () => {
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-  };
-  apply();
+// --- Theme management: preference-aware (auto/light/dark) ---
+let _osMediaQuery = null;
+
+function setThemeAttr(mode) {
+  document.documentElement.setAttribute('data-theme', mode);
+}
+
+function onOsThemeChange(e) {
+  setThemeAttr(e.matches ? 'dark' : 'light');
+}
+
+function applyThemeFromPreference(pref) {
+  // Clean up previous OS listeners
+  if (_osMediaQuery) {
+    try {
+      _osMediaQuery.removeEventListener?.('change', onOsThemeChange);
+      _osMediaQuery.removeListener?.(onOsThemeChange);
+    } catch {}
+    _osMediaQuery = null;
+  }
+
+  if (pref === 'light') {
+    setThemeAttr('light');
+    return;
+  }
+  if (pref === 'dark') {
+    setThemeAttr('dark');
+    return;
+  }
+
+  // Auto: follow OS
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setThemeAttr(prefersDark ? 'dark' : 'light');
+
   try {
-    const mm = window.matchMedia('(prefers-color-scheme: dark)');
-    // modern
-    mm.addEventListener?.('change', apply);
-    // legacy Chromium
-    mm.addListener?.(apply);
+    _osMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    _osMediaQuery.addEventListener?.('change', onOsThemeChange);
+    _osMediaQuery.addListener?.(onOsThemeChange); // legacy
   } catch {}
-})();
+}
+
+async function initThemeFromStorage() {
+  const { themePreference = 'auto' } = await chrome.storage.sync.get({ themePreference: 'auto' });
+  applyThemeFromPreference(themePreference);
+
+  // Initialize selector if present
+  const sel = document.getElementById('themePreference');
+  if (sel) {
+    sel.value = themePreference;
+    sel.addEventListener('change', async (e) => {
+      const pref = e.target.value;
+      await chrome.storage.sync.set({ themePreference: pref });
+      applyThemeFromPreference(pref);
+    });
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeFromStorage();
   restoreOptions();
   reloadLogsAndSummary();
   setupNavigation();
