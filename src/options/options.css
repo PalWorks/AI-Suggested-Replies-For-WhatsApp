@@ -490,3 +490,22 @@ label {
     display: block;
   }
 }
+
+#privacy .policy-content {
+  line-height: 1.5;
+  max-width: 900px;
+}
+
+.danger-button {
+  border: 1px solid #b30000;
+  background: transparent;
+  color: #b30000;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.danger-button:hover {
+  background: #b30000;
+  color: #fff;
+}

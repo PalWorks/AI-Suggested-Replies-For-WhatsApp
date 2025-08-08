@@ -16,6 +16,7 @@
         <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
         <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
         <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
+        <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/Help.svg" alt="Privacy icon"></button></li>
         <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
       </ul>
         <div class="extension-branding">
@@ -44,6 +45,10 @@
         <li><button class="nav-item" data-tab="bugs">
           <span class="nav-title">Bug / Feature Request</span>
           <span class="nav-subtitle">Send feedback</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="privacy">
+          <span class="nav-title">Privacy</span>
+          <span class="nav-subtitle">Policy &amp; Storage</span>
         </button></li>
         <li><button class="nav-item" data-tab="help">
           <span class="nav-title">Help</span>
@@ -102,6 +107,7 @@
         <h1 class="page-title">Logs / History</h1>
         <div class="history-header">
           <button id="download-csv" class="primary-button">Download CSV</button>
+          <button id="clear-logs" class="danger-button" title="Delete all locally stored logs">Clear Logs</button>
         </div>
         <div id="llm-summary"></div>
         <div class="history-table-wrapper">
@@ -138,6 +144,18 @@
         <h1 class="page-title">Bug / Feature Request</h1>
         <p>Found an issue or have an idea? Visit our GitHub issues page to report bugs or request features.</p>
         <p><a href="https://github.com/PalWorks/AI-Suggested-Replies-For-WhatsApp/issues" target="_blank" rel="noopener">Open GitHub Issues</a></p>
+      </section>
+      <section id="privacy" class="tab-content" role="tabpanel">
+        <h1 class="page-title">Privacy Policy</h1>
+        <div class="policy-content">
+          <p><strong>Privacy &amp; Data Storage</strong></p>
+          <ul>
+            <li>All logs and analytics (including LLM call history, error logs, and usage statistics) are stored <strong>locally</strong> in your browser via <code>chrome.storage.local</code>.</li>
+            <li>No chat content, prompts, responses, API keys, or logs are transmitted to any external server by this extension.</li>
+            <li>You can clear all local logs at any time from the “Logs / History” page.</li>
+            <li>If you export logs, they remain on your device unless you share them.</li>
+          </ul>
+        </div>
       </section>
       <section id="help" class="tab-content" role="tabpanel">
         <h1 class="page-title">Help</h1>
