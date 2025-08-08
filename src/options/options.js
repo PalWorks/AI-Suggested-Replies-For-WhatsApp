@@ -191,6 +191,7 @@ async function renderHistory() {
     const cells = [
       new Date(item.timestamp).toLocaleString(),
       item.model,
+      item.tokensPrompt ?? '—',
       item.prompt,
       item.tokensCompletion,
       item.tokensTotal,
@@ -207,13 +208,14 @@ async function renderHistory() {
 
 async function downloadCsv() {
   const {history = []} = await chrome.storage.local.get({history: []});
-  const headers = ['timestamp','model','prompt','tokensCompletion','tokensTotal','responseTime'];
+  const headers = ['Timestamp','Provider','Model','Prompt Tokens','Completion Tokens','Total Tokens','Response Time (ms)'];
   let csv = headers.join(',') + '\n';
   for (const item of history) {
     const row = [
       new Date(item.timestamp).toISOString(),
+      item.provider,
       item.model,
-      item.prompt,
+      item.tokensPrompt ?? '—',
       item.tokensCompletion,
       item.tokensTotal,
       item.responseTime
