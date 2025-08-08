@@ -189,10 +189,13 @@ async function restoreOptions() {
   validateApiKey();
 }
 
-function computeSummary(logs) {
+function renderSummary(logs) {
+  const el = document.getElementById('llm-summary');
+  if (!el) return;
+
   const now = Date.now();
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  let filtered = logs.filter(l => (now - l.timestamp) <= sevenDays);
+  let filtered = logs.filter(l => (now - (l.ts || l.timestamp || 0)) <= sevenDays);
   if (!filtered.length) filtered = logs.slice(-100);
 
   const total = filtered.length;
@@ -200,64 +203,93 @@ function computeSummary(logs) {
   const success = total - errors;
   const errorRate = total ? ((errors / total) * 100).toFixed(1) : '0.0';
 
+  const nums = arr => arr.filter(v => typeof v === 'number' && !isNaN(v));
   const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-  const durs = filtered.filter(l => typeof l.responseTime === 'number').map(l => l.responseTime);
-  const pTok = filtered.map(l => l.tokensPrompt || 0).filter(Boolean);
-  const cTok = filtered.map(l => l.tokensCompletion || 0).filter(Boolean);
-  const tTok = filtered.map(l => l.tokensTotal || 0).filter(Boolean);
 
-  return {
-    total,
-    success,
-    errors,
-    errorRate,
-    avgDuration: avg(durs),
-    avgPrompt: avg(pTok),
-    avgCompletion: avg(cTok),
-    avgTotal: avg(tTok)
-  };
+  const durs = nums(filtered.map(l => l.durationMs || l.responseTime));
+  const pTok = nums(filtered.map(l => l.tokensPrompt));
+  const cTok = nums(filtered.map(l => l.tokensCompletion));
+  const tTok = nums(filtered.map(l => l.tokensTotal));
+
+  const data = [
+    `Total: ${total}`,
+    `Success: ${success}`,
+    `Errors: ${errors}`,
+    `Error Rate: ${errorRate}%`,
+    `Avg Duration: ${avg(durs)} ms`,
+    `Avg Tokens — P:${avg(pTok)} C:${avg(cTok)} T:${avg(tTok)}`
+  ];
+
+  el.innerHTML = data.map(txt => `<span class="chip">${txt}</span>`).join('');
 }
 
-function renderSummary(summary) {
-  const el = document.getElementById('llm-summary');
-  if (!el) return;
-  el.innerHTML = `
-    <div class="llm-summary">
-      <span>Total: ${summary.total}</span>
-      <span>Success: ${summary.success}</span>
-      <span>Errors: ${summary.errors}</span>
-      <span>Error Rate: ${summary.errorRate}%</span>
-      <span>Avg Duration: ${summary.avgDuration} ms</span>
-      <span>Avg Tokens — P:${summary.avgPrompt} C:${summary.avgCompletion} T:${summary.avgTotal}</span>
-    </div>`;
-}
-
-function renderLlmHistoryTable(history) {
-  const tbody = document.querySelector('#history-table tbody');
-  tbody.innerHTML = '';
-  for (const item of history) {
-    const tr = document.createElement('tr');
-    const cells = [
-      new Date(item.timestamp).toLocaleString(),
-      item.model,
-      item.tokensPrompt ?? '—',
-      item.prompt,
-      item.tokensCompletion,
-      item.tokensTotal,
-      item.responseTime
-    ];
-    for (const cell of cells) {
-      const td = document.createElement('td');
-      td.textContent = cell;
-      tr.appendChild(td);
-    }
-    tbody.appendChild(tr);
+function stripSystemPrompt(raw) {
+  if (!raw) return '';
+  const text = String(raw);
+  const markers = [
+    'Your task:',
+    'Guidelines:',
+    'Output format:',
+    'As "Me", give an utterance'
+  ];
+  const chatMarker = 'chat history:';
+  const chatIdx = text.toLowerCase().indexOf(chatMarker);
+  if (chatIdx > -1) {
+    return text.slice(chatIdx + chatMarker.length).trim();
   }
+  let idx = -1;
+  for (const m of markers) {
+    const i = text.indexOf(m);
+    if (i > -1) idx = Math.max(idx, i);
+  }
+  return idx > -1 ? text.slice(idx + 1).trim() : text;
+}
+
+function renderLlmHistoryTable(logs) {
+  const tbody = document.querySelector('#history-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  logs.forEach(log => {
+    const row = document.createElement('tr');
+
+    const ts = document.createElement('td');
+    ts.textContent = new Date(log.timestamp).toLocaleString();
+    row.appendChild(ts);
+
+    const model = document.createElement('td');
+    model.textContent = log.model;
+    row.appendChild(model);
+
+    const pTok = document.createElement('td');
+    pTok.textContent = log.tokensPrompt ?? '—';
+    row.appendChild(pTok);
+
+    const chatCell = document.createElement('td');
+    chatCell.classList.add('chat-history-cell');
+    const clean = stripSystemPrompt(log.prompt || '');
+    chatCell.innerHTML = clean.split('\n').map(line => `<div>${line}</div>`).join('');
+    row.appendChild(chatCell);
+
+    const cTok = document.createElement('td');
+    cTok.textContent = log.tokensCompletion;
+    row.appendChild(cTok);
+
+    const tTok = document.createElement('td');
+    tTok.textContent = log.tokensTotal;
+    row.appendChild(tTok);
+
+    const resp = document.createElement('td');
+    resp.textContent = log.responseTime;
+    row.appendChild(resp);
+
+    tbody.appendChild(row);
+  });
 }
 
 async function reloadLogsAndSummary() {
   const {history = []} = await chrome.storage.local.get({history: []});
-  renderSummary(computeSummary(history));
+  renderSummary(history);
   renderLlmHistoryTable(history);
 }
 
