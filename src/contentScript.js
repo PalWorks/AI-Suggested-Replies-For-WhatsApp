@@ -203,7 +203,7 @@ document.head.appendChild(style);
       retryBtn.disabled = true;
       hideErrorBanner();
       if (lastPrompt && lastButtonObject) {
-        sendPrompt(lastPrompt, lastButtonObject);
+        sendPrompt(lastPrompt, lastButtonObject, lastInputChatData);
       }
     });
     const closeBtn = document.createElement('button');
@@ -247,12 +247,22 @@ document.head.appendChild(style);
     if (showToast) showToast(MESSAGING_ERROR);
   }
 
-  function readData() {
+function readData() {
   try {
     chrome.storage.local.get(
       {showAdvancedImprove: false},
       result => {
         showAdvancedImprove = result.showAdvancedImprove;
+      }
+    );
+    chrome.storage.sync.get(
+      {contextMessageLimit: 10},
+      result => {
+        contextMessageLimit = Math.min(100, Math.max(1, parseInt(result.contextMessageLimit, 10) || 10));
+        window.contextMessageLimit = contextMessageLimit;
+        if (observedChatContainer) {
+          cachedMessages = extractRecentMessages({limit: contextMessageLimit, filtered: true});
+        }
       }
     );
   } catch (e) {
@@ -273,20 +283,22 @@ async function copyToSendField(text) {
 
 let delayTimer;
 
-let parseHtmlFunction
+let parseHtmlFunction;
 
 let cachedMessages = [];
 let chatObserver;
 let observedChatContainer;
+let contextMessageLimit = 10;
+let lastInputChatData = '';
 
 function attachChatObserver(containerEl) {
   if (!containerEl) return;
   if (chatObserver) chatObserver.disconnect();
   chatObserver = new MutationObserver(() => {
-    cachedMessages = extractRecentMessages({limit: 10, filtered: true});
+    cachedMessages = extractRecentMessages({limit: contextMessageLimit, filtered: true});
   });
   chatObserver.observe(containerEl, {childList: true, subtree: true});
-  cachedMessages = extractRecentMessages({limit: 10, filtered: true});
+  cachedMessages = extractRecentMessages({limit: contextMessageLimit, filtered: true});
   observedChatContainer = containerEl;
 }
 
@@ -344,9 +356,10 @@ function withPermission(callback) {
   callback();
 }
 
-function sendPrompt(prompt, buttonObject) {
+function sendPrompt(prompt, buttonObject, inputChatData) {
   lastPrompt = prompt;
   lastButtonObject = buttonObject;
+  lastInputChatData = inputChatData || '';
   activeButtonObject = buttonObject;
   buttonObject.setBusy(true);
   startLoaderTimeout();
@@ -355,7 +368,8 @@ function sendPrompt(prompt, buttonObject) {
   chrome.runtime.sendMessage(
     {
       message: 'sendChatToGpt',
-      prompt
+      prompt,
+      inputChatData
     },
     response => {
       if (chrome.runtime.lastError || !response) {
@@ -412,7 +426,7 @@ async function improveButtonClicked() {
       if (instructions) parts.push(`Additional instructions: ${instructions}`);
       parts.push(`\nChat history:\n${chatHistoryShort}\n\nMy draft:\n${userDraft}`);
       const prompt = parts.join('\n');
-      sendPrompt(prompt, globalImproveButtonObject);
+      sendPrompt(prompt, globalImproveButtonObject, chatHistoryShort);
     } else {
       const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
       const result = await new Promise(resolve => {
@@ -422,7 +436,7 @@ async function improveButtonClicked() {
       });
       const template = result.promptTemplate;
       const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
-      sendPrompt(prompt, globalImproveButtonObject);
+      sendPrompt(prompt, globalImproveButtonObject, chatHistoryShort);
     }
   });
 }
@@ -447,6 +461,16 @@ function maybeShowOptionsHintInResponseField() {
 chrome.storage.local.onChanged.addListener(changes => {
   if (changes.apiKeys || changes.apiChoice) {
     location.reload();
+  }
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.contextMessageLimit) {
+    contextMessageLimit = Math.min(100, Math.max(1, parseInt(changes.contextMessageLimit.newValue, 10) || 10));
+    window.contextMessageLimit = contextMessageLimit;
+    if (observedChatContainer) {
+      cachedMessages = extractRecentMessages({limit: contextMessageLimit, filtered: true});
+    }
   }
 });
 
@@ -484,7 +508,7 @@ function injectUI(mainNode) {
     parseHtmlFunction = async function () {
         const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
         const prompt = await createPrompt(lastIsMine, chatHistoryShort);
-        sendPrompt(prompt, gptButtonObject);
+        sendPrompt(prompt, gptButtonObject, chatHistoryShort);
     };
   const gptButton = gptButtonObject.gptButton;
   gptButton.addEventListener('click', () => {

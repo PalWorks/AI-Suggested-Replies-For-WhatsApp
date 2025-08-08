@@ -6,24 +6,26 @@
   <link rel="stylesheet" href="options.css">
   <title>ChatGPT Options</title>
 </head>
-<body>
-  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">☰</button>
+  <body>
+    <header class="app-titlebar" role="banner">
+      <h1 class="app-title">AI Suggested Replies for WhatsApp</h1>
+    </header>
+    <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">☰</button>
   <div class="options-container">
     <nav class="icon-bar" aria-label="Primary">
-      <ul>
-        <li><button class="icon-item active" data-tab="settings" aria-label="Settings" aria-current="page"><img src="../icons/Settings Gear.svg" alt="Settings icon"></button></li>
-        <li><button class="icon-item" data-tab="history" aria-label="Logs / History"><img src="../icons/Logs.svg" alt="Logs icon"></button></li>
-        <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
-        <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
-        <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
-        <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/Help.svg" alt="Privacy icon"></button></li>
-        <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
-      </ul>
-        <div class="extension-branding">
-        <img src="../icons/Smart Replies for WhatsApp - SVG Logo.svg" alt="Extension icon" class="extension-icon">
-        <div class="extension-name">AI Suggested Replies For WhatsApp</div>
-        </div>
-      </nav>
+        <ul>
+          <li><button class="icon-item active" data-tab="settings" aria-label="Settings" aria-current="page"><img src="../icons/Settings Gear.svg" alt="Settings icon"></button></li>
+          <li><button class="icon-item" data-tab="history" aria-label="Logs / History"><img src="../icons/Logs.svg" alt="Logs icon"></button></li>
+          <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
+          <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
+          <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
+          <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/Help.svg" alt="Privacy icon"></button></li>
+          <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
+        </ul>
+          <div class="extension-branding">
+          <img src="../icons/Smart Replies for WhatsApp - SVG Logo.svg" alt="Extension icon" class="extension-icon">
+          </div>
+        </nav>
     <nav id="sidebar" class="sidebar" aria-label="Main">
       <ul>
         <li><button class="nav-item active" data-tab="settings" aria-current="page">
@@ -93,16 +95,21 @@
             <textarea id="prompt-template" name="prompt-template" class="wide-input system-instructions-textarea" rows="12"></textarea>
           </fieldset>
 
-          <div id="improve-section" class="improve-section">
-            <label for="show-advanced-improve">
-              <input type="checkbox" id="show-advanced-improve">
-              Show Advanced options for Improve-My-Response button
-            </label>
-          </div>
+            <div id="improve-section" class="improve-section">
+              <label for="show-advanced-improve">
+                <input type="checkbox" id="show-advanced-improve">
+                Show Advanced options for Improve-My-Response button
+              </label>
+            </div>
+            <div class="form-row">
+              <label for="context-message-limit">Messages to include in context</label>
+              <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
+              <small>How many recent messages to send to the LLM as context.</small>
+            </div>
 
-          <button type="submit" id="save-button" class="primary-button">Save</button>
-        </form>
-      </section>
+            <button type="submit" id="save-button" class="primary-button">Save</button>
+          </form>
+        </section>
       <section id="history" class="tab-content" role="tabpanel">
         <h1 class="page-title">Logs / History</h1>
         <div class="history-header">
@@ -110,22 +117,33 @@
           <button id="clear-logs" class="danger-button" title="Delete all locally stored logs">Clear Logs</button>
         </div>
         <div id="llm-summary" class="summary-bar"></div>
-        <div class="history-table-wrapper">
-          <table id="history-table">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Model</th>
-                <th>Chat History</th>
-                <th>Prompt Tokens</th>
-                <th>Completion Tokens</th>
-                <th>Total Tokens</th>
-                <th>Response Time (ms)</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+          <div class="history-table-wrapper">
+            <table id="history-table" class="history-table">
+              <colgroup>
+                <col class="col-ts">
+                <col class="col-model">
+                <col class="col-input">
+                <col class="col-output">
+                <col class="col-ptok">
+                <col class="col-ctok">
+                <col class="col-ttok">
+                <col class="col-rt">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Model</th>
+                  <th>Input Chat Data</th>
+                  <th>Output Response</th>
+                  <th>Prompt Tokens</th>
+                  <th>Completion Tokens</th>
+                  <th>Total Tokens</th>
+                  <th>Response Time (ms)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
       </section>
       <section id="guide" class="tab-content" role="tabpanel">
         <h1 class="page-title">User Guide</h1>

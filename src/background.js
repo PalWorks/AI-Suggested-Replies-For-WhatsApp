@@ -75,8 +75,9 @@ async function getApiKey(provider) {
 }
 
 
-async function sendLLM(prompt, tabId) {
+async function sendLLM(prompt, tabId, inputChatData) {
   const startTime = Date.now();
+  let outputText = '';
   try {
     const {apiChoice, modelNames = {}} = await chrome.storage.local.get({apiChoice: 'openai', modelNames: {}});
     const modelChoice = modelNames[apiChoice] || getDefaultModel(apiChoice);
@@ -147,6 +148,7 @@ async function sendLLM(prompt, tabId) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
+      outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
         response: {text}
@@ -177,6 +179,7 @@ async function sendLLM(prompt, tabId) {
             }
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
+              outputText += token;
               safeSendTabMessage(tabId, {type: 'token', data: token});
             }
           } catch (e) {
@@ -197,6 +200,7 @@ async function sendLLM(prompt, tabId) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
+      outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
         response: {text}
@@ -209,14 +213,17 @@ async function sendLLM(prompt, tabId) {
     const tokensCompletion = usage?.completion_tokens || usage?.output_tokens || 0;
     const tokensTotal = usage?.total_tokens || tokensPrompt + tokensCompletion;
     await addHistory({
-      timestamp: Date.now(),
+      ts: Date.now(),
       provider: apiChoice,
       model: modelChoice,
+      inputChatData,
+      outputResponse: outputText,
       prompt,
       tokensPrompt,
       tokensCompletion,
       tokensTotal,
-      responseTime: endTime - startTime
+      durationMs: endTime - startTime,
+      status: 'success'
     });
   } catch (err) {
     let msg;
@@ -244,7 +251,7 @@ async function initExtension() {
       chrome.runtime.openOptionsPage();
       sendResponse({received: true});
     } else if (request.message === 'sendChatToGpt') {
-      sendLLM(request.prompt, sender.tab.id);
+      sendLLM(request.prompt, sender.tab.id, request.inputChatData);
       sendResponse({received: true});
     } else if (request.message === 'providerChanged' && request.providerUrl) {
       chrome.permissions.request({origins: [request.providerUrl]}, () => {

@@ -24,6 +24,7 @@ const showIcon = '../icons/Eye Icon - Show Password.svg';
 const hideIcon = '../icons/Eye Icon - Hide Password.svg';
 const feedbackBox = document.getElementById('api-key-feedback');
 const saveBtn = document.getElementById('save-button');
+const contextLimitInput = document.getElementById('context-message-limit');
 
 let apiKeys = {};
 let modelNames = {};
@@ -118,6 +119,7 @@ async function saveOptions(e) {
   const modelName = modelInput.value.trim();
   const promptTemplate = document.getElementById('prompt-template').value;
   const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
+  const contextLimit = Math.min(100, Math.max(1, parseInt(contextLimitInput.value, 10) || 10));
 
   const key = await getOrCreateEncKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -153,6 +155,7 @@ async function saveOptions(e) {
       saveBtn.textContent = original;
     }, 2000);
   });
+  chrome.storage.sync.set({contextMessageLimit: contextLimit});
 }
 
 async function loadProviderFields(provider) {
@@ -185,6 +188,8 @@ async function restoreOptions() {
   apiChoiceSelect.value = items.apiChoice;
   document.getElementById('prompt-template').value = items.promptTemplate;
   document.getElementById('show-advanced-improve').checked = items.showAdvancedImprove;
+  const syncItems = await chrome.storage.sync.get({contextMessageLimit: 10});
+  contextLimitInput.value = syncItems.contextMessageLimit;
   await loadProviderFields(items.apiChoice);
   validateApiKey();
 }
@@ -247,15 +252,6 @@ function formatISOWithTZ(timestamp, timeZone = 'Asia/Kolkata') {
   return `${yyyy}-${mo}-${da}T${h}:${mi}:${s}${sign}${hh}:${mm}`;
 }
 
-function stripSystemPrompt(raw) {
-  if (!raw) return '';
-  const text = String(raw);
-  const chatMarker = 'chat history:';
-  const idx = text.toLowerCase().indexOf(chatMarker);
-  if (idx > -1) return text.slice(idx + chatMarker.length).trim();
-  return text;
-}
-
 function renderLlmHistoryTable(logs) {
   const tbody = document.querySelector('#history-table tbody');
   if (!tbody) return;
@@ -263,41 +259,72 @@ function renderLlmHistoryTable(logs) {
 
   logs.forEach(log => {
     const row = document.createElement('tr');
-    const tsCell = document.createElement('td');
-    tsCell.textContent = formatISOWithTZ(log.ts ?? log.timestamp);
-    row.appendChild(tsCell);
 
-    const modelCell = document.createElement('td');
-    modelCell.textContent = log.model || log.providerModel || '';
-    row.appendChild(modelCell);
+    const ts = document.createElement('td');
+    ts.textContent = formatISOWithTZ(log.ts ?? log.timestamp, 'Asia/Kolkata');
+    row.appendChild(ts);
 
-    const chatCell = document.createElement('td');
-    chatCell.innerHTML = `<div class="chat-history-cell">${
-      stripSystemPrompt(log.chatHistory || log.chat || '')
-        .split('\n')
-        .map(line => `<div>${line}</div>`)
-        .join('')
+    const model = document.createElement('td');
+    model.textContent = log.model || '';
+    row.appendChild(model);
+
+    const inputChat = (log.inputChatData || log.chatHistory || log.chat || '').trim();
+    const outputResp = (log.outputResponse || log.reply || log.output || '').trim();
+
+    const inputTd = document.createElement('td');
+    inputTd.innerHTML = `<div class="cell-scroll">${
+      inputChat.split('\n').map(l => `<div>${l}</div>`).join('')
     }</div>`;
-    row.appendChild(chatCell);
+    row.appendChild(inputTd);
 
-    const pTok = document.createElement('td');
-    pTok.textContent = log.tokensPrompt ?? '—';
-    row.appendChild(pTok);
+    const outTd = document.createElement('td');
+    outTd.innerHTML = `<div class="cell-scroll">${
+      outputResp ? outputResp : '<em>—</em>'
+    }</div>`;
+    row.appendChild(outTd);
 
-    const cTok = document.createElement('td');
-    cTok.textContent = log.tokensCompletion ?? '—';
-    row.appendChild(cTok);
+    const p = document.createElement('td');
+    p.textContent = (log.tokensPrompt ?? '—');
+    row.appendChild(p);
 
-    const tTok = document.createElement('td');
-    tTok.textContent = log.tokensTotal ?? '—';
-    row.appendChild(tTok);
+    const c = document.createElement('td');
+    c.textContent = (log.tokensCompletion ?? '—');
+    row.appendChild(c);
+
+    const t = document.createElement('td');
+    t.textContent = (log.tokensTotal ?? '—');
+    row.appendChild(t);
 
     const rt = document.createElement('td');
-    rt.textContent = log.durationMs ?? log.responseTime ?? '—';
+    rt.textContent = (log.durationMs ?? log.responseTime ?? '—');
     row.appendChild(rt);
 
     tbody.appendChild(row);
   });
+}
+
+const CSV_HEADERS = [
+  'Timestamp',
+  'Model',
+  'Input Chat Data',
+  'Output Response',
+  'Prompt Tokens',
+  'Completion Tokens',
+  'Total Tokens',
+  'Response Time (ms)'
+];
+
+function toCsvRows(logs) {
+  return logs.map(log => ({
+    Timestamp: formatISOWithTZ(log.ts ?? log.timestamp, 'Asia/Kolkata'),
+    Model: log.model || '',
+    'Input Chat Data': (log.inputChatData || log.chatHistory || log.chat || '').replace(/\r?\n/g, ' ↵ '),
+    'Output Response': (log.outputResponse || log.reply || log.output || ''),
+    'Prompt Tokens': (log.tokensPrompt ?? ''),
+    'Completion Tokens': (log.tokensCompletion ?? ''),
+    'Total Tokens': (log.tokensTotal ?? ''),
+    'Response Time (ms)': (log.durationMs ?? log.responseTime ?? '')
+  }));
 }
 
 async function reloadLogsAndSummary() {
@@ -308,19 +335,10 @@ async function reloadLogsAndSummary() {
 
 async function downloadCsv() {
   const {history = []} = await chrome.storage.local.get({history: []});
-  const headers = ['Timestamp','Provider','Model','Prompt Tokens','Completion Tokens','Total Tokens','Response Time (ms)'];
-  let csv = headers.join(',') + '\n';
-  for (const item of history) {
-    const row = [
-      new Date(item.ts ?? item.timestamp).toISOString(),
-      item.provider,
-      item.model,
-      item.tokensPrompt ?? '—',
-      item.tokensCompletion,
-      item.tokensTotal,
-      item.responseTime
-    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
-    csv += row + '\n';
+  const rows = toCsvRows(history);
+  let csv = CSV_HEADERS.join(',') + '\n';
+  for (const row of rows) {
+    csv += CSV_HEADERS.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(',') + '\n';
   }
   const blob = new Blob([csv], {type: 'text/csv'});
   const url = URL.createObjectURL(blob);

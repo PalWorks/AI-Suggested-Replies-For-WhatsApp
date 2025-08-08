@@ -81,7 +81,8 @@
 
   function parseHtml(main) {
     try {
-      const chatHistory = extractRecentMessages({limit: 10, filtered: true, root: main});
+      const limit = window.contextMessageLimit || 10;
+      const chatHistory = extractRecentMessages({limit, filtered: true, root: main});
       const lastExpression = chatHistory[chatHistory.length - 1];
       let lastIsMine = false;
       if (lastExpression && lastExpression.includes('Me:')) {
