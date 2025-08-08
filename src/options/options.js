@@ -223,26 +223,37 @@ function renderSummary(logs) {
   el.innerHTML = data.map(txt => `<span class="chip">${txt}</span>`).join('');
 }
 
+function formatISOWithTZ(timestamp, timeZone = 'Asia/Kolkata') {
+  const d = new Date(timestamp);
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(d).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+  const utc = new Date(d.toLocaleString('en-US', {timeZone: 'UTC'}));
+  const tz = new Date(d.toLocaleString('en-US', {timeZone}));
+  const offsetMin = Math.round((tz - utc) / 60000);
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const pad = n => String(Math.trunc(Math.abs(n))).padStart(2, '0');
+  const hh = pad(offsetMin / 60);
+  const mm = pad(offsetMin % 60);
+  const yyyy = parts.year;
+  const mo = parts.month;
+  const da = parts.day;
+  const h = parts.hour;
+  const mi = parts.minute;
+  const s = parts.second;
+  return `${yyyy}-${mo}-${da}T${h}:${mi}:${s}${sign}${hh}:${mm}`;
+}
+
 function stripSystemPrompt(raw) {
   if (!raw) return '';
   const text = String(raw);
-  const markers = [
-    'Your task:',
-    'Guidelines:',
-    'Output format:',
-    'As "Me", give an utterance'
-  ];
   const chatMarker = 'chat history:';
-  const chatIdx = text.toLowerCase().indexOf(chatMarker);
-  if (chatIdx > -1) {
-    return text.slice(chatIdx + chatMarker.length).trim();
-  }
-  let idx = -1;
-  for (const m of markers) {
-    const i = text.indexOf(m);
-    if (i > -1) idx = Math.max(idx, i);
-  }
-  return idx > -1 ? text.slice(idx + 1).trim() : text;
+  const idx = text.toLowerCase().indexOf(chatMarker);
+  if (idx > -1) return text.slice(idx + chatMarker.length).trim();
+  return text;
 }
 
 function renderLlmHistoryTable(logs) {
@@ -252,36 +263,38 @@ function renderLlmHistoryTable(logs) {
 
   logs.forEach(log => {
     const row = document.createElement('tr');
+    const tsCell = document.createElement('td');
+    tsCell.textContent = formatISOWithTZ(log.ts ?? log.timestamp);
+    row.appendChild(tsCell);
 
-    const ts = document.createElement('td');
-    ts.textContent = new Date(log.timestamp).toLocaleString();
-    row.appendChild(ts);
+    const modelCell = document.createElement('td');
+    modelCell.textContent = log.model || log.providerModel || '';
+    row.appendChild(modelCell);
 
-    const model = document.createElement('td');
-    model.textContent = log.model;
-    row.appendChild(model);
+    const chatCell = document.createElement('td');
+    chatCell.innerHTML = `<div class="chat-history-cell">${
+      stripSystemPrompt(log.chatHistory || log.chat || '')
+        .split('\n')
+        .map(line => `<div>${line}</div>`)
+        .join('')
+    }</div>`;
+    row.appendChild(chatCell);
 
     const pTok = document.createElement('td');
     pTok.textContent = log.tokensPrompt ?? '—';
     row.appendChild(pTok);
 
-    const chatCell = document.createElement('td');
-    chatCell.classList.add('chat-history-cell');
-    const clean = stripSystemPrompt(log.prompt || '');
-    chatCell.innerHTML = clean.split('\n').map(line => `<div>${line}</div>`).join('');
-    row.appendChild(chatCell);
-
     const cTok = document.createElement('td');
-    cTok.textContent = log.tokensCompletion;
+    cTok.textContent = log.tokensCompletion ?? '—';
     row.appendChild(cTok);
 
     const tTok = document.createElement('td');
-    tTok.textContent = log.tokensTotal;
+    tTok.textContent = log.tokensTotal ?? '—';
     row.appendChild(tTok);
 
-    const resp = document.createElement('td');
-    resp.textContent = log.responseTime;
-    row.appendChild(resp);
+    const rt = document.createElement('td');
+    rt.textContent = log.durationMs ?? log.responseTime ?? '—';
+    row.appendChild(rt);
 
     tbody.appendChild(row);
   });
@@ -299,7 +312,7 @@ async function downloadCsv() {
   let csv = headers.join(',') + '\n';
   for (const item of history) {
     const row = [
-      new Date(item.timestamp).toISOString(),
+      new Date(item.ts ?? item.timestamp).toISOString(),
       item.provider,
       item.model,
       item.tokensPrompt ?? '—',

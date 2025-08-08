@@ -151,7 +151,7 @@ body {
 
 .nav-item {
   width: 100%;
-  padding: 14px 24px;
+  padding: 6px 24px;
   background: none;
   border: none;
   text-align: left;
@@ -160,7 +160,9 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 4px;
+  min-height: 56px;
 }
 
 .nav-item:hover {
@@ -228,6 +230,11 @@ body {
   padding-top: 20px;
 }
 
+.tab-content h1.page-title,
+.tab-content h2.page-title {
+  margin-top: 20px;
+}
+
 input,
 select,
 textarea {
@@ -265,7 +272,7 @@ button {
   }
 }
 
-.history-header button,
+
 .primary-button,
 .danger-button {
   padding: 8px 14px;
@@ -302,6 +309,7 @@ button {
   gap: 10px;
   align-items: center;
   margin: 8px 0 12px;
+  flex-wrap: wrap;
 }
 
 .summary-bar {
@@ -330,7 +338,7 @@ button {
 }
 
 .history-table-wrapper {
-  overflow: auto;
+  overflow-x: auto;
 }
 
 #history-table {
