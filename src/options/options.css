@@ -354,11 +354,6 @@ button {
   border: 1px solid #b30000;
 }
 
-.danger-button:hover {
-  background: #b30000;
-  color: #fff;
-}
-
 .history-header {
   display: flex;
   gap: 10px;
@@ -393,6 +388,8 @@ button {
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  /* Optional subtle inner delineation in dark mode */
+  box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset;
 }
 
 .history-table-wrapper {
@@ -630,4 +627,25 @@ label {
 .danger-button:hover {
   background: #b30000;
   color: #fff;
+}
+
+/* ===== Theme tokens — dark mode contrast tweak + robust fallbacks ===== */
+
+/* Primary tokens (already in your sheet) will be respected; we only tweak dark values slightly */
+:root[data-theme="dark"] {
+  /* Slightly darker card/chip so scroll boxes pop; border a bit brighter for separation */
+  --bg-card: #19252c;        /* was ~#1d2a32 */
+  --bg-chip: #23323b;        /* was ~#2a3942 */
+  --border-color: #3b4b55;   /* was ~#2a3942 */
+  /* keep your existing --text-primary / --text-secondary as-is */
+}
+
+/* Fallback: if for any reason the data-theme attribute isn't present,
+   honor the user's OS preference so colors remain correct */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.light) {
+    --bg-card: #19252c;
+    --bg-chip: #23323b;
+    --border-color: #3b4b55;
+  }
 }
