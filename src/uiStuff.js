@@ -50,21 +50,36 @@ function createAndAddOptionsButton(newButtonContainer) {
     .then(r => r.text())
     .then(svg => {
       const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-      const circle = doc.querySelector('circle');
-      const path = doc.querySelector('path');
-      svgElement.setAttribute('viewBox', '0 0 24 24');
-      if (circle) {
-        circle.setAttribute('stroke', 'currentColor');
-        circle.setAttribute('stroke-width', '1.5');
-        svgElement.appendChild(circle);
+      const srcSvg = doc.querySelector('svg');
+      if (!srcSvg) return;
+
+      // Set viewBox
+      const vb = srcSvg.getAttribute('viewBox') || '0 0 24 24';
+      svgElement.setAttribute('viewBox', vb);
+
+      // Helper to normalize colors to currentColor
+      function normalize(el) {
+        const fill = el.getAttribute && el.getAttribute('fill');
+        const stroke = el.getAttribute && el.getAttribute('stroke');
+
+        // If the element has a fill color (not none), make it themable
+        if (fill && fill !== 'none') el.setAttribute('fill', 'currentColor');
+        // If the element has a stroke color (not none), make it themable
+        if (stroke && stroke !== 'none') {
+          el.setAttribute('stroke', 'currentColor');
+          // Preserve stroke width/linecap/linejoin if present
+        }
+
+        // Recursively normalize children
+        for (const child of el.children || []) normalize(child);
       }
-      if (path) {
-        path.setAttribute('stroke', 'currentColor');
-        path.setAttribute('stroke-width', '1.5');
-        path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('stroke-linejoin', 'round');
-        svgElement.appendChild(path);
-      }
+
+      // Clone children from source <svg> into our target svg
+      srcSvg.querySelectorAll(':scope > *').forEach(node => {
+        const cloned = node.cloneNode(true);
+        normalize(cloned);
+        svgElement.appendChild(cloned);
+      });
     });
   const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = optionsButton.querySelector('button');
