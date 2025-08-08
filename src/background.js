@@ -95,7 +95,8 @@ async function sendLLM(prompt, tabId) {
       messages: [{role: 'user', content: prompt}],
       temperature: 0.7,
       max_tokens: 150,
-      stream: true
+      stream: true,
+      stream_options: {include_usage: true}
     };
 
     if (apiChoice === 'openrouter') {
@@ -168,7 +169,11 @@ async function sendLLM(prompt, tabId) {
           try {
             const parsed = JSON.parse(data);
             if (parsed.usage) {
-              usage = parsed.usage;
+              usage = {
+                prompt_tokens: parsed.usage.prompt_tokens ?? 0,
+                completion_tokens: parsed.usage.completion_tokens ?? 0,
+                total_tokens: parsed.usage.total_tokens ?? 0
+              };
             }
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
