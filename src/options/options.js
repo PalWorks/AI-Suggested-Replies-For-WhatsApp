@@ -182,8 +182,52 @@ async function restoreOptions() {
   validateApiKey();
 }
 
+function computeSummary(logs) {
+  const now = Date.now();
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  let filtered = logs.filter(l => (now - l.timestamp) <= sevenDays);
+  if (!filtered.length) filtered = logs.slice(-100);
+
+  const total = filtered.length;
+  const errors = filtered.filter(l => l.status === 'error').length;
+  const success = total - errors;
+  const errorRate = total ? ((errors / total) * 100).toFixed(1) : '0.0';
+
+  const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+  const durs = filtered.filter(l => typeof l.responseTime === 'number').map(l => l.responseTime);
+  const pTok = filtered.map(l => l.tokensPrompt || 0).filter(Boolean);
+  const cTok = filtered.map(l => l.tokensCompletion || 0).filter(Boolean);
+  const tTok = filtered.map(l => l.tokensTotal || 0).filter(Boolean);
+
+  return {
+    total,
+    success,
+    errors,
+    errorRate,
+    avgDuration: avg(durs),
+    avgPrompt: avg(pTok),
+    avgCompletion: avg(cTok),
+    avgTotal: avg(tTok)
+  };
+}
+
+function renderSummary(summary) {
+  const el = document.getElementById('llm-summary');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="llm-summary">
+      <span>Total: ${summary.total}</span>
+      <span>Success: ${summary.success}</span>
+      <span>Errors: ${summary.errors}</span>
+      <span>Error Rate: ${summary.errorRate}%</span>
+      <span>Avg Duration: ${summary.avgDuration} ms</span>
+      <span>Avg Tokens — P:${summary.avgPrompt} C:${summary.avgCompletion} T:${summary.avgTotal}</span>
+    </div>`;
+}
+
 async function renderHistory() {
   const {history = []} = await chrome.storage.local.get({history: []});
+  renderSummary(computeSummary(history));
   const tbody = document.querySelector('#history-table tbody');
   tbody.innerHTML = '';
   for (const item of history) {
