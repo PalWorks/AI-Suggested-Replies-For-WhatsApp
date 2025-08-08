@@ -2,11 +2,28 @@ import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../
 
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
-  renderHistory();
+  reloadLogsAndSummary();
   setupNavigation();
 });
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
+document.getElementById('clear-llm-logs')?.addEventListener('click', async () => {
+  if (!confirm('This will permanently delete all local LLM logs. Continue?')) return;
+  try {
+    await chrome.storage.local.remove('llmLogs');
+    if (typeof reloadLogsAndSummary === 'function') {
+      await reloadLogsAndSummary();
+    } else {
+      const {llmLogs = []} = await chrome.storage.local.get({llmLogs: []});
+      if (typeof renderLlmHistoryTable === 'function') renderLlmHistoryTable(llmLogs);
+      if (typeof renderLlmHistorySummary === 'function') renderLlmHistorySummary(llmLogs);
+    }
+    alert('All local LLM logs cleared.');
+  } catch (err) {
+    console.error('Failed to clear logs:', err);
+    alert('Failed to clear logs. See console for details.');
+  }
+});
 
 const apiChoiceSelect = document.getElementById('api-choice');
 const apiKeyInput = document.getElementById('api-key');
@@ -182,11 +199,17 @@ async function restoreOptions() {
   validateApiKey();
 }
 
-async function renderHistory() {
-  const {history = []} = await chrome.storage.local.get({history: []});
+async function reloadLogsAndSummary() {
+  const {llmLogs = []} = await chrome.storage.local.get({llmLogs: []});
+  renderLlmHistoryTable(llmLogs);
+  renderLlmHistorySummary(llmLogs);
+}
+
+function renderLlmHistoryTable(llmLogs) {
   const tbody = document.querySelector('#history-table tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  for (const item of history) {
+  for (const item of llmLogs) {
     const tr = document.createElement('tr');
     const cells = [
       new Date(item.timestamp).toLocaleString(),
@@ -206,11 +229,22 @@ async function renderHistory() {
   }
 }
 
+function renderLlmHistorySummary(llmLogs) {
+  const summaryEl = document.getElementById("llm-history-summary");
+  if (!summaryEl) return;
+  const totalCalls = llmLogs.length;
+  const totalPrompt = llmLogs.reduce((sum, l) => sum + (l.tokensPrompt || 0), 0);
+  const totalCompletion = llmLogs.reduce((sum, l) => sum + (l.tokensCompletion || 0), 0);
+  const totalTokens = llmLogs.reduce((sum, l) => sum + (l.tokensTotal || 0), 0);
+  summaryEl.textContent = `Total calls: ${totalCalls} | Prompt tokens: ${totalPrompt} | Completion tokens: ${totalCompletion} | Total tokens: ${totalTokens}`;
+}
+
+
 async function downloadCsv() {
-  const {history = []} = await chrome.storage.local.get({history: []});
+  const {llmLogs = []} = await chrome.storage.local.get({llmLogs: []});
   const headers = ['Timestamp','Provider','Model','Prompt Tokens','Completion Tokens','Total Tokens','Response Time (ms)'];
   let csv = headers.join(',') + '\n';
-  for (const item of history) {
+  for (const item of llmLogs) {
     const row = [
       new Date(item.timestamp).toISOString(),
       item.provider,

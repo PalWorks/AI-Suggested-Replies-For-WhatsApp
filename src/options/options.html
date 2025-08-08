@@ -15,6 +15,7 @@
         <li><button class="icon-item" data-tab="history" aria-label="Logs / History"><img src="../icons/Logs.svg" alt="Logs icon"></button></li>
         <li><button class="icon-item" data-tab="guide" aria-label="User Guide"><img src="../icons/User Guide.svg" alt="User guide icon"></button></li>
         <li><button class="icon-item" data-tab="about" aria-label="About"><img src="../icons/About.svg" alt="About icon"></button></li>
+        <li><button class="icon-item" data-tab="privacy-policy" aria-label="Privacy Policy"><img src="../icons/About.svg" alt="Privacy icon"></button></li>
         <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
         <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
       </ul>
@@ -40,6 +41,10 @@
         <li><button class="nav-item" data-tab="about">
           <span class="nav-title">About</span>
           <span class="nav-subtitle">Extension info</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="privacy-policy">
+          <span class="nav-title">Privacy Policy</span>
+          <span class="nav-subtitle">Data storage</span>
         </button></li>
         <li><button class="nav-item" data-tab="bugs">
           <span class="nav-title">Bug / Feature Request</span>
@@ -102,7 +107,9 @@
         <h1 class="page-title">Logs / History</h1>
         <div class="history-header">
           <button id="download-csv" class="primary-button">Download CSV</button>
+          <button id="clear-llm-logs" class="btn btn-danger" title="Delete all locally stored LLM logs">Clear Logs</button>
         </div>
+        <div id="llm-history-summary" class="history-summary"></div>
         <div class="history-table-wrapper">
           <table id="history-table">
             <thead>
@@ -132,6 +139,18 @@
       <section id="about" class="tab-content" role="tabpanel">
         <h1 class="page-title">About</h1>
         <p>This open-source extension suggests replies using multiple AI providers.</p>
+      </section>
+      <section id="privacy-policy" class="tab-content" role="tabpanel">
+        <h1 class="page-title">Privacy Policy</h1>
+        <div class="policy-content">
+          <p><strong>Privacy &amp; Data Storage</strong></p>
+          <ul>
+            <li>All logs and analytics (including LLM call history, error logs, and usage statistics) are stored <strong>locally</strong> in your browser via <code>chrome.storage.local</code>.</li>
+            <li>No chat content, prompts, responses, API keys, or logs are transmitted to any external server by this extension.</li>
+            <li>You can clear all local logs at any time from the “LLM Call History” page.</li>
+            <li>If you export logs, they remain on your device unless you share them.</li>
+          </ul>
+        </div>
       </section>
       <section id="bugs" class="tab-content" role="tabpanel">
         <h1 class="page-title">Bug / Feature Request</h1>

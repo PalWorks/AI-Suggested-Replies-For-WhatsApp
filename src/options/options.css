@@ -458,6 +458,25 @@ label {
   z-index: 30;
 }
 
+#privacy-policy .policy-content {
+  line-height: 1.5;
+  max-width: 900px;
+}
+
+.btn.btn-danger {
+  border: 1px solid #b30000;
+  background: transparent;
+  color: #b30000;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn.btn-danger:hover {
+  background: #b30000;
+  color: #fff;
+}
+
 @media (max-width: 600px) {
   .options-container {
     flex-direction: column;
