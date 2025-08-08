@@ -90,24 +90,6 @@
             <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
           </fieldset>
 
-          <fieldset id="appearance-settings">
-            <legend>Appearance</legend>
-            <div class="provider-model-row">
-              <div class="provider-col">
-                <label for="themePreference">
-                  <img src="../icons/DarkThemeSwitcherIcon.svg" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;">
-                  Theme
-                </label>
-                <select id="themePreference" name="themePreference">
-                  <option value="auto">Auto (Follow System)</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
-                <p class="helper">Choose Light or Dark, or let the extension follow your OS.</p>
-              </div>
-            </div>
-          </fieldset>
-
           <div class="form-row">
             <label for="context-message-limit">How many recent messages to send to the LLM as context:</label>
             <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
