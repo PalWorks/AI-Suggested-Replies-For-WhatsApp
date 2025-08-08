@@ -279,6 +279,18 @@ button {
   margin-bottom: 16px;
 }
 
+#llm-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+#llm-summary span {
+  white-space: nowrap;
+}
+
 .history-table-wrapper {
   overflow: auto;
 }
