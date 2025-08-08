@@ -1,5 +1,21 @@
 import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../utils.js';
 
+// --- Ensure theme flag is set based on OS preference and kept in sync ---
+(function ensureThemeFlag() {
+  const apply = () => {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  };
+  apply();
+  try {
+    const mm = window.matchMedia('(prefers-color-scheme: dark)');
+    // modern
+    mm.addEventListener?.('change', apply);
+    // legacy Chromium
+    mm.addListener?.(apply);
+  } catch {}
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   reloadLogsAndSummary();
