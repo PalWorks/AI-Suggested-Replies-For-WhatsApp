@@ -33,54 +33,67 @@
     'qr code expired'
   ];
 
-function parseHtml(main) {
-  try {
-    const main2 = main;
-    const chatHistory = [];
-    let msgContainers = main2.querySelectorAll('.message-out, .message-in');
-    msgContainers = Array.from(msgContainers).slice(-10);
-    msgContainers.forEach(el => {
-      let messageStringCollector = '';
-      const elements = el.querySelectorAll('.copyable-text');
-      elements.forEach(el => {
-        const messageLabel = el.getAttribute('data-pre-plain-text');
-        if (messageLabel !== null) {
-          if (el.closest('.message-out') !== null) {
-            messageStringCollector += 'Me: ';
+  function extractRecentMessages({limit = 10, filtered = true, root = document.getElementById('main')} = {}) {
+    try {
+      if (!root) return [];
+      let msgContainers = root.querySelectorAll('.message-out, .message-in');
+      msgContainers = Array.from(msgContainers).slice(-limit);
+      const chatHistory = [];
+      msgContainers.forEach(el => {
+        let messageStringCollector = '';
+        const elements = el.querySelectorAll('.copyable-text');
+        elements.forEach(el => {
+          const messageLabel = el.getAttribute('data-pre-plain-text');
+          if (messageLabel !== null) {
+            if (el.closest('.message-out') !== null) {
+              messageStringCollector += 'Me: ';
+            } else {
+              const contactName = messageLabel.replace(/\[.*?\]\s*/, '').slice(0, -2);
+              messageStringCollector += contactName + ': ';
+            }
           } else {
-            // Extract the sender's name and show it directly instead of a number
-            const contactName = messageLabel.replace(/\[.*?\]\s*/, '').slice(0, -2);
-            messageStringCollector += contactName + ': ';
+            const messageContent = getTextWithEmojis(el);
+            if (typeof messageContent !== 'undefined') {
+              messageStringCollector += messageContent;
+            }
           }
-        } else {
-          const messageContent = getTextWithEmojis(el);
-          if (typeof messageContent !== 'undefined') {
-            messageStringCollector += messageContent;
+        });
+        const text = messageStringCollector.trim();
+        if (filtered) {
+          const lowered = text.toLowerCase();
+          const content = text.replace(/^.*?:\s*/, '').trim();
+          const hasMedia = el.querySelector('img, video, canvas') !== null;
+          const isBlacklisted = NON_CONVERSATIONAL_PATTERNS.some(p => lowered.includes(p));
+          const isMediaOnly = hasMedia && content === '';
+          if (text && !isBlacklisted && !isMediaOnly) {
+            chatHistory.push(messageStringCollector);
           }
+        } else if (text) {
+          chatHistory.push(messageStringCollector);
         }
       });
-      const text = messageStringCollector.trim();
-      const lowered = text.toLowerCase();
-      const content = text.replace(/^.*?:\s*/, '').trim();
-      const hasMedia = el.querySelector('img, video, canvas') !== null;
-      const isBlacklisted = NON_CONVERSATIONAL_PATTERNS.some(p => lowered.includes(p));
-      const isMediaOnly = hasMedia && content === '';
-      if (text && !isBlacklisted && !isMediaOnly) {
-        chatHistory.push(messageStringCollector);
-      }
-    });
-    const lastExpression = chatHistory[chatHistory.length - 1];
-    let lastIsMine = false;
-    if (lastExpression.includes('Me:')) {
-      lastIsMine = true;
+      return chatHistory;
+    } catch (e) {
+      console.error('Failed to extract messages:', e);
+      return [];
     }
-    const chatHistoryShortAsString = chatHistory.join('\n\n');
-    return {chatHistoryShort: chatHistoryShortAsString, lastIsMine};
-  } catch (e) {
-    console.error('Failed to parse chat history:', e);
-    if (showToast) showToast('Failed to parse chat history');
-    return {chatHistoryShort: '', lastIsMine: false};
   }
+
+  function parseHtml(main) {
+    try {
+      const chatHistory = extractRecentMessages({limit: 10, filtered: true, root: main});
+      const lastExpression = chatHistory[chatHistory.length - 1];
+      let lastIsMine = false;
+      if (lastExpression && lastExpression.includes('Me:')) {
+        lastIsMine = true;
+      }
+      const chatHistoryShortAsString = chatHistory.join('\n\n');
+      return {chatHistoryShort: chatHistoryShortAsString, lastIsMine};
+    } catch (e) {
+      console.error('Failed to parse chat history:', e);
+      if (showToast) showToast('Failed to parse chat history');
+      return {chatHistoryShort: '', lastIsMine: false};
+    }
   }
 
   function getTextWithEmojis(element) {
@@ -102,4 +115,5 @@ function parseHtml(main) {
   }
 
   window.parseHtml = parseHtml;
+  window.extractRecentMessages = extractRecentMessages;
 })();

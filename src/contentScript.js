@@ -275,6 +275,21 @@ let delayTimer;
 
 let parseHtmlFunction
 
+let cachedMessages = [];
+let chatObserver;
+let observedChatContainer;
+
+function attachChatObserver(containerEl) {
+  if (!containerEl) return;
+  if (chatObserver) chatObserver.disconnect();
+  chatObserver = new MutationObserver(() => {
+    cachedMessages = extractRecentMessages({limit: 10, filtered: true});
+  });
+  chatObserver.observe(containerEl, {childList: true, subtree: true});
+  cachedMessages = extractRecentMessages({limit: 10, filtered: true});
+  observedChatContainer = containerEl;
+}
+
 function triggerEvent() {
     if (delayTimer) {
         clearTimeout(delayTimer);
@@ -308,6 +323,12 @@ async function createPrompt(lastIsMine, chatHistoryShort) {
 }
 
 function extractConversation(node) {
+  if (cachedMessages.length) {
+    const chatHistoryShort = cachedMessages.join('\n\n');
+    const lastExpr = cachedMessages[cachedMessages.length - 1] || '';
+    const lastIsMine = lastExpr.includes('Me:');
+    return {chatHistoryShort, lastIsMine};
+  }
   return parseHtml(node);
 }
 
@@ -435,6 +456,8 @@ function injectUI(mainNode) {
     return;
   }
   globalMainNode = mainNode;
+  const chatContainer = mainNode.querySelector('[role="region"]');
+  if (chatContainer) attachChatObserver(chatContainer);
   readData();
 // Create a new footer element with the same HTML content as the original
     const {
@@ -489,8 +512,14 @@ const observer = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     if (mutation.type === 'childList') {
       const main = document.getElementById('main');
-      if (main && !main.querySelector('.gptbtn')) {
-        injectUI(main);
+      if (main) {
+        const container = main.querySelector('[role="region"]');
+        if (container && container !== observedChatContainer) {
+          attachChatObserver(container);
+        }
+        if (!main.querySelector('.gptbtn')) {
+          injectUI(main);
+        }
       }
       mutation.addedNodes.forEach(node => {
         if (node.getAttribute && node.getAttribute('role') === 'row') {
