@@ -2,11 +2,18 @@ import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../
 
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
-  renderHistory();
+  reloadLogsAndSummary();
   setupNavigation();
 });
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
+const clearLogsBtn = document.getElementById('clear-logs');
+if (clearLogsBtn) {
+  clearLogsBtn.addEventListener('click', async () => {
+    await chrome.storage.local.remove('history');
+    reloadLogsAndSummary();
+  });
+}
 
 const apiChoiceSelect = document.getElementById('api-choice');
 const apiKeyInput = document.getElementById('api-key');
@@ -225,9 +232,7 @@ function renderSummary(summary) {
     </div>`;
 }
 
-async function renderHistory() {
-  const {history = []} = await chrome.storage.local.get({history: []});
-  renderSummary(computeSummary(history));
+function renderLlmHistoryTable(history) {
   const tbody = document.querySelector('#history-table tbody');
   tbody.innerHTML = '';
   for (const item of history) {
@@ -248,6 +253,12 @@ async function renderHistory() {
     }
     tbody.appendChild(tr);
   }
+}
+
+async function reloadLogsAndSummary() {
+  const {history = []} = await chrome.storage.local.get({history: []});
+  renderSummary(computeSummary(history));
+  renderLlmHistoryTable(history);
 }
 
 async function downloadCsv() {
