@@ -1,4 +1,4 @@
-import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel, showToast} from '../utils.js';
 
 // --- Theme management: preference-aware (auto/light/dark) ---
 let _osMediaQuery = null;
@@ -65,12 +65,18 @@ async function initThemeFromStorage() {
 
   const btn = document.getElementById('theme-toggle');
   if (btn) {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // don’t trigger nav
+
       const { themePreference: cur = 'auto' } = await chrome.storage.sync.get({ themePreference: 'auto' });
       const next = nextTheme(cur);
       await chrome.storage.sync.set({ themePreference: next });
       applyThemeFromPreference(next);
       await syncThemeToggleUi(next);
+
+      const name = next === 'auto' ? 'Auto theme' : (next === 'dark' ? 'Dark mode' : 'Light mode');
+      try { showToast(`${name} ON`); } catch {}
     });
   }
 }
@@ -440,7 +446,7 @@ function refreshWhatsAppTabs() {
 
 function setupNavigation() {
   const navItems = document.querySelectorAll('.nav-item');
-  const iconItems = document.querySelectorAll('.icon-item');
+  const iconItems = document.querySelectorAll('.icon-item[data-tab]'); // only tabs
   const sections = document.querySelectorAll('.tab-content');
   const sidebar = document.getElementById('sidebar');
   const menuToggle = document.getElementById('menu-toggle');

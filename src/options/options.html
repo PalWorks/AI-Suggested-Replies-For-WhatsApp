@@ -22,16 +22,24 @@
           <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/privacyicon.svg" alt="Privacy icon"></button></li>
           <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
         </ul>
-        <!-- Theme toggle button (cycles Auto → Light → Dark) -->
-        <div id="theme-toggle-wrapper" style="margin-top:auto; padding:10px 0;">
-          <button id="theme-toggle" class="icon-item" aria-label="Theme: Auto" title="Theme: Auto" style="border-left:none">
-            <img src="../icons/DarkThemeSwitcherIcon.svg" alt="Theme toggle">
-          </button>
-        </div>
-          <div class="extension-branding">
-          <img src="../icons/Smart Replies for WhatsApp - SVG Logo.svg" alt="Extension icon" class="extension-icon">
+        <!-- Bottom rail: theme toggle + branding -->
+        <div class="rail-bottom">
+          <div id="theme-toggle-wrapper">
+            <button id="theme-toggle"
+                    class="icon-item utility"
+                    aria-label="Theme: Auto"
+                    title="Theme: Auto"
+                    style="border-left:none">
+              <img src="../icons/DarkThemeSwitcherIcon.svg" alt="Theme toggle">
+            </button>
           </div>
-        </nav>
+          <div class="extension-branding">
+            <img src="../icons/Smart Replies for WhatsApp - SVG Logo.svg"
+                 alt="Extension icon"
+                 class="extension-icon">
+          </div>
+        </div>
+      </nav>
     <nav id="sidebar" class="sidebar" aria-label="Main">
       <ul>
         <li><button class="nav-item active" data-tab="settings" aria-current="page">

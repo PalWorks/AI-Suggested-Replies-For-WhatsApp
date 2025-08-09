@@ -178,10 +178,22 @@ body {
   border-left: 4px solid var(--accent);
   background: var(--divider);
 }
+/* Group theme button and logo at the bottom */
+.rail-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#theme-toggle-wrapper {
+  padding-top: 10px;
+}
 
 .extension-branding {
-  margin-top: auto;
-  padding: 12px 0;
+  margin-top: 0; /* override auto */
+  padding: 0 0 12px 0;
   text-align: center;
 }
 
