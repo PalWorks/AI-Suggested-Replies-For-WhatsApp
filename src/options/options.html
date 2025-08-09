@@ -86,6 +86,7 @@
                   <option value="openrouter">OpenRouter</option>
                   <option value="anthropic">Anthropic</option>
                   <option value="mistral">Mistral</option>
+                  <option value="custom">Custom (OpenAI-compatible)</option>
                 </select>
               </div>
               <div class="model-col">
@@ -102,6 +103,23 @@
               </button>
             </div>
             <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
+
+            <!-- API Endpoint (read-only for built-ins, editable for Custom) -->
+            <div class="form-row">
+              <label for="api-endpoint">API Endpoint</label>
+              <input id="api-endpoint" class="api-key-input monospace" type="text"
+                     placeholder="https://host.example.com/v1">
+              <div class="helper">Base URL of your provider (OpenAI‑compatible). For example: <code>https://localhost:11434/v1</code>.</div>
+            </div>
+
+            <!-- Auth scheme selector (enabled only for Custom) -->
+            <div class="form-row">
+              <label for="auth-scheme">Auth Header</label>
+              <select id="auth-scheme">
+                <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
+                <option value="x-api-key">X-API-Key: &lt;key&gt;</option>
+              </select>
+            </div>
           </fieldset>
 
           <div class="form-row">

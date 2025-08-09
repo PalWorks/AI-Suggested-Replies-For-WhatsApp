@@ -122,6 +122,18 @@ async function sendLLM(prompt, tabId, inputChatData) {
       url = 'https://api.mistral.ai/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;
       body = JSON.stringify({...basePayload, model: modelChoice});
+    } else if (apiChoice === 'custom') {
+      const { providerUrls = {}, authSchemes = {} } = await chrome.storage.local.get({ providerUrls: {}, authSchemes: {} });
+      let base = providerUrls.custom || '';
+      while (base.endsWith('/') ) base = base.slice(0, -1);
+      if (!base) throw new Error('Custom endpoint missing');
+
+      url = `${base}/chat/completions`;
+      const scheme = authSchemes.custom || 'bearer';
+      if (scheme === 'bearer') headers.Authorization = `Bearer ${apiKey}`;
+      else headers['x-api-key'] = apiKey;
+
+      body = JSON.stringify({ ...basePayload, model: modelChoice });
     } else {
       url = 'https://api.openai.com/v1/chat/completions';
       headers.Authorization = `Bearer ${apiKey}`;

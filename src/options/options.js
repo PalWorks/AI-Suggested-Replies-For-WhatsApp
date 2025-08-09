@@ -1,4 +1,4 @@
-import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel, showToast} from '../utils.js';
+import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel, showToast, defaultBase, defaultAuth} from '../utils.js';
 
 // --- Theme management: preference-aware (auto/light/dark) ---
 let _osMediaQuery = null;
@@ -110,11 +110,15 @@ const hideIcon = '../icons/Eye Icon - Hide Password.svg';
 const feedbackBox = document.getElementById('api-key-feedback');
 const saveBtn = document.getElementById('save-button');
 const contextLimitInput = document.getElementById('context-message-limit');
+const endpointInput = document.getElementById('api-endpoint');
+const authSchemeSelect = document.getElementById('auth-scheme');
 
 let apiKeys = {};
 let modelNames = {};
 let encKeyB64 = '';
 let validateTimeout;
+let providerUrls = {};
+let authSchemes = {};
 
 apiChoiceSelect.addEventListener('change', () => {
   loadProviderFields(apiChoiceSelect.value);
@@ -167,27 +171,28 @@ async function validateApiKey() {
     setFeedback('', '');
     return;
   }
-  let url;
-  let headers = {};
+
+  let base = provider === 'custom'
+    ? (endpointInput.value.trim() || providerUrls.custom || '')
+    : defaultBase(provider);
+  while (base.endsWith('/')) base = base.slice(0, -1);
+
+  const scheme = (provider === 'custom'
+    ? (authSchemeSelect.value || 'bearer')
+    : defaultAuth(provider));
+
+  if (!base) {
+    setFeedback('Enter a valid endpoint', 'error');
+    return;
+  }
+
+  const url = `${base}/models`;
+  const headers = {};
+  if (scheme === 'bearer') headers.Authorization = `Bearer ${apiKey}`;
+  else headers['x-api-key'] = apiKey;
   if (provider === 'openrouter') {
-    url = 'https://openrouter.ai/api/v1/models';
-    headers = {
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://web.whatsapp.com',
-      'X-Title': 'AI Suggested Replies For WhatsApp'
-    };
-  } else if (provider === 'anthropic') {
-    url = 'https://api.anthropic.com/v1/models';
-    headers = {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    };
-  } else if (provider === 'mistral') {
-    url = 'https://api.mistral.ai/v1/models';
-    headers = {Authorization: `Bearer ${apiKey}`};
-  } else {
-    url = 'https://api.openai.com/v1/models';
-    headers = {Authorization: `Bearer ${apiKey}`};
+    headers['HTTP-Referer'] = 'https://web.whatsapp.com';
+    headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
   }
   try {
     const res = await fetch(url, {headers});
@@ -205,6 +210,14 @@ async function saveOptions(e) {
   const promptTemplate = document.getElementById('prompt-template').value;
   const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
   const contextLimit = Math.min(100, Math.max(1, parseInt(contextLimitInput.value, 10) || 10));
+  const endpoint = endpointInput?.value?.trim() || '';
+  const authScheme = authSchemeSelect?.value || 'bearer';
+
+  if (provider === 'custom') {
+    if (endpoint) providerUrls.custom = endpoint;
+    else delete providerUrls.custom;
+    authSchemes.custom = authScheme;
+  }
 
   const key = await getOrCreateEncKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -227,7 +240,9 @@ async function saveOptions(e) {
     apiKeys,
     modelNames,
     promptTemplate,
-    showAdvancedImprove
+    showAdvancedImprove,
+    providerUrls,
+    authSchemes
   };
 
   chrome.storage.local.set(storeObj, () => {
@@ -241,12 +256,31 @@ async function saveOptions(e) {
     }, 2000);
   });
   chrome.storage.sync.set({contextMessageLimit: contextLimit});
+
+  if (provider === 'custom' && endpoint) {
+    chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: endpoint }, () => {});
+  }
 }
 
 async function loadProviderFields(provider) {
   apiKeyInput.value = '';
   modelInput.value = modelNames[provider] || '';
   modelInput.placeholder = getDefaultModel(provider);
+  endpointInput.value = '';
+  authSchemeSelect.value = 'bearer';
+
+  if (provider === 'custom') {
+    endpointInput.readOnly = false;
+    authSchemeSelect.disabled = false;
+    endpointInput.value = providerUrls.custom || '';
+    authSchemeSelect.value = authSchemes.custom || 'bearer';
+  } else {
+    endpointInput.readOnly = true;
+    authSchemeSelect.disabled = true;
+    endpointInput.value = defaultBase(provider);
+    authSchemeSelect.value = defaultAuth(provider);
+  }
+
   if (!apiKeys[provider] || !encKeyB64) return;
   try {
     const key = await crypto.subtle.importKey('raw', b64ToBuf(encKeyB64), 'AES-GCM', false, ['decrypt']);
@@ -265,11 +299,15 @@ async function restoreOptions() {
     modelNames: {},
     promptTemplate: DEFAULT_PROMPT,
     showAdvancedImprove: false,
-    encKey: ''
+    encKey: '',
+    providerUrls: {},
+    authSchemes: {}
   });
   apiKeys = items.apiKeys;
   modelNames = items.modelNames;
   encKeyB64 = items.encKey;
+  providerUrls = items.providerUrls || {};
+  authSchemes = items.authSchemes || {};
   apiChoiceSelect.value = items.apiChoice;
   document.getElementById('prompt-template').value = items.promptTemplate;
   document.getElementById('show-advanced-improve').checked = items.showAdvancedImprove;
