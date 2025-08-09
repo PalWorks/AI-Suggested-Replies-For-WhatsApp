@@ -80,10 +80,9 @@
             <legend>Provider Settings</legend>
 
             <div class="provider-settings">
-
               <!-- Provider -->
               <label for="api-choice">Provider</label>
-              <div class="input-cell">
+              <div class="stack">
                 <select id="api-choice" name="api-choice">
                   <option value="openai">OpenAI</option>
                   <option value="openrouter">OpenRouter</option>
@@ -95,14 +94,14 @@
 
               <!-- Model Name -->
               <label for="model-name">Model Name</label>
-              <div class="input-cell stack">
+              <div class="stack">
                 <input type="text" id="model-name" name="model-name" class="wide-input" placeholder="gpt-3.5-turbo">
-                <div class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</div>
+                <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
               </div>
 
               <!-- API Key -->
               <label for="api-key">API Key</label>
-              <div class="input-cell stack">
+              <div class="stack">
                 <div class="api-key-wrap">
                   <input type="password" id="api-key" name="api-key" class="wide-input monospace api-key-input" aria-describedby="api-key-feedback">
                   <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
@@ -112,33 +111,36 @@
                 <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
               </div>
 
-              <!-- API Endpoint -->
+              <!-- API Endpoint (read-only for built-ins, editable for Custom) -->
               <label for="api-endpoint">API Endpoint</label>
-              <div class="input-cell stack">
+              <div class="stack">
                 <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="https://host.example.com/v1">
-                <div class="helper">Base URL of your provider (OpenAI‑compatible). For example: <code>https://localhost:11434/v1</code>.</div>
+                <div class="helper">Base URL of your provider (OpenAI-compatible). For example: <code>https://localhost:11434/v1</code>.</div>
               </div>
 
               <!-- Auth Header -->
               <label for="auth-scheme">Auth Header</label>
-              <div class="input-cell">
+              <div class="stack">
                 <select id="auth-scheme">
                   <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
                   <option value="x-api-key">X-API-Key: &lt;key&gt;</option>
                 </select>
               </div>
-
             </div>
           </fieldset>
 
-          <div class="form-row">
-            <label for="context-message-limit">How many recent messages to send to the LLM as context:</label>
-            <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
-          </div>
+          <fieldset id="context-settings">
+            <legend>Context Settings</legend>
 
-          <fieldset id="system-instructions">
-            <legend>System Instructions</legend>
-            <textarea id="prompt-template" name="prompt-template" class="wide-input system-instructions-textarea" rows="12"></textarea>
+            <div class="form-row">
+              <label for="context-message-limit">How many recent messages to send to the LLM as context:</label>
+              <input id="context-message-limit" type="number" min="1" max="100" step="1" placeholder="10">
+            </div>
+
+            <div class="form-row">
+              <label for="prompt-template">System Instructions</label>
+              <textarea id="prompt-template" name="prompt-template" class="wide-input system-instructions-textarea" rows="12"></textarea>
+            </div>
           </fieldset>
 
             <div id="improve-section" class="improve-section">
