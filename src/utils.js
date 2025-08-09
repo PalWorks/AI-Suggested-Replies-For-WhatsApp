@@ -142,3 +142,22 @@ export function showToast(message, opts = {}) {
     setTimeout(() => toast.remove(), 250);
   }, duration);
 }
+
+export function defaultBase(provider) {
+  switch (provider) {
+    case 'openrouter':
+      return 'https://openrouter.ai/api/v1';
+    case 'anthropic':
+      return 'https://api.anthropic.com/v1';
+    case 'mistral':
+      return 'https://api.mistral.ai/v1';
+    case 'openai':
+      return 'https://api.openai.com/v1';
+    default:
+      return '';
+  }
+}
+
+export function defaultAuth(provider) {
+  return provider === 'anthropic' ? 'x-api-key' : 'bearer';
+}
