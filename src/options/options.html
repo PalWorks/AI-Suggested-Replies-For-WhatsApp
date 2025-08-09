@@ -78,9 +78,12 @@
         <form id="options-form">
           <fieldset id="provider-settings">
             <legend>Provider Settings</legend>
-            <div class="provider-model-row">
-              <div class="provider-col">
-                <label for="api-choice">Provider</label>
+
+            <div class="provider-settings">
+
+              <!-- Provider -->
+              <label for="api-choice">Provider</label>
+              <div class="input-cell">
                 <select id="api-choice" name="api-choice">
                   <option value="openai">OpenAI</option>
                   <option value="openrouter">OpenRouter</option>
@@ -89,36 +92,42 @@
                   <option value="custom">Custom (OpenAI-compatible)</option>
                 </select>
               </div>
-              <div class="model-col">
-                <label for="model-name">Model Name</label>
+
+              <!-- Model Name -->
+              <label for="model-name">Model Name</label>
+              <div class="input-cell stack">
                 <input type="text" id="model-name" name="model-name" class="wide-input" placeholder="gpt-3.5-turbo">
-                <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
+                <div class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</div>
               </div>
-            </div>
-            <label for="api-key">API Key</label>
-            <div class="input-group">
-              <input type="password" id="api-key" name="api-key" class="wide-input monospace api-key-input" aria-describedby="api-key-feedback">
-              <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
-                <img src="../icons/Eye Icon - Show Password.svg" alt="">
-              </button>
-            </div>
-            <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
 
-            <!-- API Endpoint (read-only for built-ins, editable for Custom) -->
-            <div class="form-row">
+              <!-- API Key -->
+              <label for="api-key">API Key</label>
+              <div class="input-cell stack">
+                <div class="api-key-wrap">
+                  <input type="password" id="api-key" name="api-key" class="wide-input monospace api-key-input" aria-describedby="api-key-feedback">
+                  <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
+                    <img src="../icons/Eye Icon - Show Password.svg" alt="">
+                  </button>
+                </div>
+                <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
+              </div>
+
+              <!-- API Endpoint -->
               <label for="api-endpoint">API Endpoint</label>
-              <input id="api-endpoint" class="api-key-input monospace" type="text"
-                     placeholder="https://host.example.com/v1">
-              <div class="helper">Base URL of your provider (OpenAI‑compatible). For example: <code>https://localhost:11434/v1</code>.</div>
-            </div>
+              <div class="input-cell stack">
+                <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="https://host.example.com/v1">
+                <div class="helper">Base URL of your provider (OpenAI‑compatible). For example: <code>https://localhost:11434/v1</code>.</div>
+              </div>
 
-            <!-- Auth scheme selector (enabled only for Custom) -->
-            <div class="form-row">
+              <!-- Auth Header -->
               <label for="auth-scheme">Auth Header</label>
-              <select id="auth-scheme">
-                <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
-                <option value="x-api-key">X-API-Key: &lt;key&gt;</option>
-              </select>
+              <div class="input-cell">
+                <select id="auth-scheme">
+                  <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
+                  <option value="x-api-key">X-API-Key: &lt;key&gt;</option>
+                </select>
+              </div>
+
             </div>
           </fieldset>
 
