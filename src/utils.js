@@ -97,46 +97,45 @@ export function getDefaultModel(provider) {
   }
 }
 
-export function showToast(message) {
-  if (typeof window !== 'undefined' && window.document && document.body) {
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.position = 'fixed';
-    toast.style.bottom = '20px';
-    toast.style.left = '50%';
-    toast.style.transform = 'translateX(-50%)';
-    toast.style.background = 'rgba(0, 0, 0, 0.8)';
-    toast.style.color = '#fff';
-    toast.style.padding = '8px 12px';
-    toast.style.borderRadius = '4px';
-    toast.style.zIndex = '2147483647';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
-    try {
-      chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-          if (tabs[0] && tabs[0].id !== undefined) {
-            chrome.tabs.sendMessage(tabs[0].id, {type: 'showToast', message}, () => {
-              if (chrome.runtime.lastError) {
-                console.error('Failed to send toast to tab', chrome.runtime.lastError);
-              }
-            });
-          }
-        });
-      } catch (e) {
-        // ignore messaging errors
-      }
-    } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-      try {
-        chrome.runtime.sendMessage({type: 'showToast', message}, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Failed to send toast message', chrome.runtime.lastError);
-          }
-        });
-      } catch (e) {
-        // ignore runtime errors
-      }
+export function showToast(message, opts = {}) {
+  const { anchor = null, align = 'right', duration = 1800, offset = 8 } = opts;
+
+  const toast = document.createElement('div');
+  toast.className = 'wa-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  toast.style.top = '0px';
+  toast.style.left = '0px';
+
+  const place = () => {
+    let x, y;
+    if (anchor && anchor.getBoundingClientRect) {
+      const r = anchor.getBoundingClientRect();
+      const w = toast.offsetWidth;
+      const h = toast.offsetHeight;
+      x = align === 'left' ? (r.left - w - offset) : (r.right + offset);
+      y = r.top + (r.height - h) / 2;
+      const m = 8;
+      x = Math.max(m, Math.min(window.innerWidth - w - m, x));
+      y = Math.max(m, Math.min(window.innerHeight - h - m, y));
+      toast.style.left = `${x}px`;
+      toast.style.top = `${y}px`;
     } else {
-      console.log(message);
+      const w = toast.offsetWidth;
+      const h = toast.offsetHeight;
+      toast.style.left = `${(window.innerWidth - w) / 2}px`;
+      toast.style.top = `${window.innerHeight - h - 24}px`;
     }
-  }
+    requestAnimationFrame(() => toast.classList.add('show'));
+  };
+
+  requestAnimationFrame(place);
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 250);
+  }, duration);
+}
