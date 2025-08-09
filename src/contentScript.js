@@ -24,17 +24,6 @@
 const style = document.createElement('style');
 style.textContent = `
 /* Theme variables */
-/* cross-theme icon filter (used by our inline styles in uiStuff.js) */
-:root {
-  --icon-filter: none;
-}
-/* WhatsApp itself toggles `body.dark` when the site is in dark mode. */
-body.dark { --icon-filter: invert(1) brightness(1.2); }
-/* Fallback to OS preference only when WA hasn’t set body.dark explicitly */
-@media (prefers-color-scheme: dark) {
-  body:not(.dark) { --icon-filter: invert(1) brightness(1.2); }
-}
-
 :root {
   --gpt-btn-spinner-border: rgba(0, 0, 0, 0.1);
   --gpt-btn-spinner-top: #54656F;
