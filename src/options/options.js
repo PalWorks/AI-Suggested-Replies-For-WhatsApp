@@ -41,18 +41,36 @@ function applyThemeFromPreference(pref) {
   } catch {}
 }
 
+function nextTheme(pref) {
+  if (pref === 'auto') return 'light';
+  if (pref === 'light') return 'dark';
+  return 'auto';
+}
+
+function labelFor(pref) {
+  return `Theme: ${pref.charAt(0).toUpperCase()}${pref.slice(1)}`;
+}
+
+async function syncThemeToggleUi(pref) {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  btn.setAttribute('aria-label', labelFor(pref));
+  btn.title = labelFor(pref);
+}
+
 async function initThemeFromStorage() {
   const { themePreference = 'auto' } = await chrome.storage.sync.get({ themePreference: 'auto' });
   applyThemeFromPreference(themePreference);
+  await syncThemeToggleUi(themePreference);
 
-  // Initialize selector if present
-  const sel = document.getElementById('themePreference');
-  if (sel) {
-    sel.value = themePreference;
-    sel.addEventListener('change', async (e) => {
-      const pref = e.target.value;
-      await chrome.storage.sync.set({ themePreference: pref });
-      applyThemeFromPreference(pref);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      const { themePreference: cur = 'auto' } = await chrome.storage.sync.get({ themePreference: 'auto' });
+      const next = nextTheme(cur);
+      await chrome.storage.sync.set({ themePreference: next });
+      applyThemeFromPreference(next);
+      await syncThemeToggleUi(next);
     });
   }
 }
