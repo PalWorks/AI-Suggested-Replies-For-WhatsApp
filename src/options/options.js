@@ -76,7 +76,10 @@ async function initThemeFromStorage() {
       await syncThemeToggleUi(next);
 
       const name = next === 'auto' ? 'Auto theme' : (next === 'dark' ? 'Dark mode' : 'Light mode');
-      try { showToast(`${name} ON`); } catch {}
+      try {
+        const anchor = document.getElementById('theme-toggle');
+        showToast(`${name} ON`, { anchor, align: 'right', duration: 1600, offset: 10 });
+      } catch {}
     });
   }
 }
