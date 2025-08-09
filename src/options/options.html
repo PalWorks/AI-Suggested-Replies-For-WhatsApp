@@ -22,6 +22,12 @@
           <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/privacyicon.svg" alt="Privacy icon"></button></li>
           <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
         </ul>
+        <!-- Theme toggle button (cycles Auto → Light → Dark) -->
+        <div id="theme-toggle-wrapper" style="margin-top:auto; padding:10px 0;">
+          <button id="theme-toggle" class="icon-item" aria-label="Theme: Auto" title="Theme: Auto" style="border-left:none">
+            <img src="../icons/DarkThemeSwitcherIcon.svg" alt="Theme toggle">
+          </button>
+        </div>
           <div class="extension-branding">
           <img src="../icons/Smart Replies for WhatsApp - SVG Logo.svg" alt="Extension icon" class="extension-icon">
           </div>
@@ -88,24 +94,6 @@
               </button>
             </div>
             <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
-          </fieldset>
-
-          <fieldset id="appearance-settings">
-            <legend>Appearance</legend>
-            <div class="provider-model-row">
-              <div class="provider-col">
-                <label for="themePreference">
-                  <img src="../icons/DarkThemeSwitcherIcon.svg" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;">
-                  Theme
-                </label>
-                <select id="themePreference" name="themePreference">
-                  <option value="auto">Auto (Follow System)</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
-                <p class="helper">Choose Light or Dark, or let the extension follow your OS.</p>
-              </div>
-            </div>
           </fieldset>
 
           <div class="form-row">

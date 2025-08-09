@@ -81,15 +81,9 @@ function createAndAddOptionsButton(newButtonContainer) {
         svgElement.appendChild(cloned);
       });
     });
-  const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = optionsButton.querySelector('button');
-  function applyIconColor() {
-    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
-    optionsButton.style.color = color;
-    if (innerBtn) innerBtn.style.color = color;
-  }
-  applyIconColor();
-  theme.addEventListener('change', applyIconColor);
+  optionsButton.style.filter = 'var(--icon-filter)';
+  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   optionsButton.addEventListener('click', () => {
     chrome.runtime.sendMessage({action: 'openOptionsPage'}, response => {
       if (chrome.runtime.lastError || !response) {
@@ -118,15 +112,9 @@ function creatCopyButton(newFooter, newButtonContainer) {
         svgElement.appendChild(path);
       });
     });
-  const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = copyButton.querySelector('button');
-  function applyIconColor() {
-    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
-    copyButton.style.color = color;
-    if (innerBtn) innerBtn.style.color = color;
-  }
-  applyIconColor();
-  theme.addEventListener('change', applyIconColor);
+  copyButton.style.filter = 'var(--icon-filter)';
+  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   newButtonContainer.appendChild(copyButton);
   return copyButton;
 }
@@ -149,15 +137,9 @@ function createDeleteButton(newFooter, newButtonContainer) {
         svgElement.appendChild(path);
       });
     });
-  const theme = window.matchMedia('(prefers-color-scheme: dark)');
   const innerBtn = deleteButton.querySelector('button');
-  function applyIconColor() {
-    const color = theme.matches ? 'rgba(233, 237, 239, 0.8)' : 'rgba(84, 101, 111, 0.8)';
-    deleteButton.style.color = color;
-    if (innerBtn) innerBtn.style.color = color;
-  }
-  applyIconColor();
-  theme.addEventListener('change', applyIconColor);
+  deleteButton.style.filter = 'var(--icon-filter)';
+  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   deleteButton.style.display = 'none';
   newButtonContainer.appendChild(deleteButton);
   return deleteButton;
