@@ -313,25 +313,24 @@ let globalMainNode;
 let newFooterParagraph;
 let globalDeleteButton;
 
-async function createPrompt(lastIsMine, chatHistoryShort) {
-    let promptCenter;
-    let mePrefix = 'Me: ';
-    if (lastIsMine) {
-        promptCenter = 'Complete the following chat by providing a second message for my double-texting sequence. Do not react but continue the thought, elaborate, or add a supplementary point, without repeating the last utterance.';
-    } else {
-        promptCenter = 'As "Me", give an utterance completing the following chat conversation flow.';
-    }
+async function createPrompt(lastIsMine, chatHistoryShort, meta = {}) {
+  const { chatType = 'dm', participants = [] } = meta;
+  const mePrefix = 'Me: ';
+  const promptCenter = lastIsMine
+    ? 'There is no new partner message after my last one. Write a very brief, polite nudge from Me to elicit a reply (no new topics or plans).'
+    : 'Write what Me should send next in direct reply to the most recent partner message.';
 
-    const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
-    const result = await new Promise(resolve => {
-        chrome.storage.local.get({
-            promptTemplate: DEFAULT_PROMPT
-        }, resolve);
-    });
+  const metaBlock =
+    `\nChat metadata:\n- chat.type: ${chatType}\n- participants: ${participants.join(', ') || '(one-to-one)'}\n`;
 
-    const promptTemplate = result.promptTemplate;
-    const prompt = `${promptTemplate}\n${promptCenter}\n\nchat history:\n${chatHistoryShort}\n\n${mePrefix}`;
-    return prompt;
+  const { DEFAULT_PROMPT } = await import(chrome.runtime.getURL('utils.js'));
+  const result = await new Promise(resolve => {
+    chrome.storage.local.get({ promptTemplate: DEFAULT_PROMPT }, resolve);
+  });
+  const promptTemplate = result.promptTemplate;
+
+  const prompt = `${promptTemplate}\n${promptCenter}${metaBlock}\nChat history:\n${chatHistoryShort}\n\n${mePrefix}`;
+  return { prompt, metaBlock };
 }
 
 function extractConversation(node) {
@@ -339,7 +338,19 @@ function extractConversation(node) {
     const chatHistoryShort = cachedMessages.join('\n\n');
     const lastExpr = cachedMessages[cachedMessages.length - 1] || '';
     const lastIsMine = lastExpr.includes('Me:');
-    return {chatHistoryShort, lastIsMine};
+
+    const participants = Array.from(new Set(
+      cachedMessages
+        .map(line => {
+          const m = line.match(/^([^:]+):\s/);
+          const name = m ? m[1].trim() : '';
+          return name && name !== 'Me' ? name : null;
+        })
+        .filter(Boolean)
+    ));
+    const chatType = participants.length > 1 ? 'group' : 'dm';
+
+    return {chatHistoryShort, lastIsMine, chatType, participants};
   }
   return parseHtml(node);
 }
@@ -411,32 +422,41 @@ async function improveButtonClicked() {
   }
   withPermission(async () => {
     hideErrorBanner();
-    const {chatHistoryShort} = extractConversation(globalMainNode);
+    const { chatHistoryShort, chatType, participants } = extractConversation(globalMainNode);
     if (showAdvancedImprove) {
       const dialogResult = await showImproveDialog(chatHistoryShort, draft);
       if (!dialogResult) {
         return;
       }
-      const {draft: userDraft, style, tone, instructions} = dialogResult;
-      const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
-      const {promptTemplate} = await new Promise(resolve => {
-        chrome.storage.local.get({promptTemplate: DEFAULT_PROMPT}, resolve);
+      const { draft: userDraft, style, tone, instructions } = dialogResult;
+      const { DEFAULT_PROMPT } = await import(chrome.runtime.getURL('utils.js'));
+      const { promptTemplate } = await new Promise(resolve => {
+        chrome.storage.local.get({ promptTemplate: DEFAULT_PROMPT }, resolve);
       });
       const parts = [`${promptTemplate}`, `Response style: ${style}`, `Tone: ${tone}`];
       if (instructions) parts.push(`Additional instructions: ${instructions}`);
+      parts.push(`Chat metadata: chat.type=${chatType}; participants=${participants.join(', ') || '(one-to-one)'}`);
       parts.push(`\nChat history:\n${chatHistoryShort}\n\nMy draft:\n${userDraft}`);
       const prompt = parts.join('\n');
-      sendPrompt(prompt, globalImproveButtonObject, chatHistoryShort);
+      const inputLog = `chat.type=${chatType}; participants=${participants.join(', ')}\n\n${chatHistoryShort}`;
+      sendPrompt(prompt, globalImproveButtonObject, inputLog);
     } else {
-      const {DEFAULT_PROMPT} = await import(chrome.runtime.getURL('utils.js'));
+      const { DEFAULT_PROMPT } = await import(chrome.runtime.getURL('utils.js'));
       const result = await new Promise(resolve => {
         chrome.storage.local.get({
           promptTemplate: DEFAULT_PROMPT
         }, resolve);
       });
       const template = result.promptTemplate;
-      const prompt = `${template}\nHere is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.\n\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`;
-      sendPrompt(prompt, globalImproveButtonObject, chatHistoryShort);
+      const parts = [
+        `${template}`,
+        `Chat metadata: chat.type=${chatType}; participants=${participants.join(', ') || '(one-to-one)'}`,
+        'Here is my drafted response to the above chat. Please rewrite it to be clearer, more concise, and polite, while retaining my intent.',
+        `\nchat history:\n${chatHistoryShort}\n\nmy draft:\n${draft}`
+      ];
+      const prompt = parts.join('\n');
+      const inputLog = `chat.type=${chatType}; participants=${participants.join(', ')}\n\n${chatHistoryShort}`;
+      sendPrompt(prompt, globalImproveButtonObject, inputLog);
     }
   });
 }
@@ -506,9 +526,10 @@ function injectUI(mainNode) {
     updateDeleteButtonVisibility();
     // Removed legacy privacy notice to streamline the suggestion bar UI
     parseHtmlFunction = async function () {
-        const {chatHistoryShort, lastIsMine} = extractConversation(mainNode);
-        const prompt = await createPrompt(lastIsMine, chatHistoryShort);
-        sendPrompt(prompt, gptButtonObject, chatHistoryShort);
+      const { chatHistoryShort, lastIsMine, chatType, participants } = extractConversation(mainNode);
+      const { prompt, metaBlock } = await createPrompt(lastIsMine, chatHistoryShort, { chatType, participants });
+      const logInput = `chat.type=${chatType}; participants=${participants.join(', ')}\n\n${chatHistoryShort}`;
+      sendPrompt(prompt, gptButtonObject, logInput);
     };
   const gptButton = gptButtonObject.gptButton;
   gptButton.addEventListener('click', () => {
