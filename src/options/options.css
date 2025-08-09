@@ -216,6 +216,8 @@ body {
 
 .sidebar {
   width: 300px;
+  flex: 0 0 300px;   /* fixed basis; do not shrink */
+  min-width: 300px;  /* belt-and-suspenders */
   background: var(--sidebar-bg);
   border-right: 1px solid var(--divider);
   overflow-y: auto;
@@ -270,7 +272,7 @@ body {
   padding: 0 32px 32px;
   overflow: auto;
   height: 100%;
-  min-width: 0;
+  min-width: 0;            /* already present: keep to enable shrink */
   box-sizing: border-box;
 }
 
@@ -382,6 +384,8 @@ button {
   max-height: 160px;
   overflow-y: auto;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   line-height: 1.35;
   padding: 8px 10px;
   background: var(--bg-card);
@@ -394,9 +398,14 @@ button {
 
 .history-table-wrapper {
   overflow-x: auto;
+  min-width: 0;            /* prevent table from forcing sidebar shrink */
 }
 
-.history-table { width: 100%; border-collapse: collapse; }
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;     /* use our column widths; ignore content min-width */
+}
 
 .history-table th,
 .history-table td {
@@ -413,14 +422,27 @@ button {
   font-weight: 600;
 }
 
-.history-table .col-ts    { width: 14rem; }
-.history-table .col-model { width: 10rem; }
-.history-table .col-input { width: 34rem; }
-.history-table .col-output{ width: 28rem; }
+.history-table .col-ts    { width: 12rem; }
+.history-table .col-model { width: 9rem; }
+.history-table .col-input { width: 24rem; }   /* was 34rem */
+.history-table .col-output{ width: 22rem; }   /* was 28rem */
 .history-table .col-ptok,
 .history-table .col-ctok,
-.history-table .col-ttok  { width: 8rem; text-align: right; }
-.history-table .col-rt    { width: 10rem; text-align: right; }
+.history-table .col-ttok  { width: 7rem; text-align: right; }
+.history-table .col-rt    { width: 9rem; text-align: right; }
+
+@media (max-width: 1400px) {
+  .history-table .col-input { width: 22rem; }
+  .history-table .col-output { width: 20rem; }
+  .history-table .col-ptok,
+  .history-table .col-ctok,
+  .history-table .col-ttok { width: 6rem; }
+  .history-table .col-rt { width: 8rem; }
+}
+@media (max-width: 1200px) {
+  .history-table .col-input { width: 20rem; }
+  .history-table .col-output { width: 18rem; }
+}
 
 .history-table th:nth-child(5),
 .history-table th:nth-child(6),
