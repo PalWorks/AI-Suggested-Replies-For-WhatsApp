@@ -89,11 +89,26 @@
         lastIsMine = true;
       }
       const chatHistoryShortAsString = chatHistory.join('\n\n');
-      return {chatHistoryShort: chatHistoryShortAsString, lastIsMine};
+
+      // Collect distinct non-"Me" senders
+      const participants = Array.from(
+        new Set(
+          chatHistory
+            .map(line => {
+              const m = line.match(/^([^:]+):\s/);
+              const name = m ? m[1].trim() : '';
+              return name && name !== 'Me' ? name : null;
+            })
+            .filter(Boolean)
+        )
+      );
+      const chatType = participants.length > 1 ? 'group' : 'dm';
+
+      return {chatHistoryShort: chatHistoryShortAsString, lastIsMine, chatType, participants};
     } catch (e) {
       console.error('Failed to parse chat history:', e);
       if (showToast) showToast('Failed to parse chat history');
-      return {chatHistoryShort: '', lastIsMine: false};
+      return {chatHistoryShort: '', lastIsMine: false, chatType: 'dm', participants: []};
     }
   }
 
