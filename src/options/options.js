@@ -138,6 +138,13 @@ toggleBtn.addEventListener('click', () => {
   toggleBtn.setAttribute('aria-label', isText ? 'Show API key' : 'Hide API key');
 });
 
+function showAuthRow(show) {
+  const label = document.getElementById('auth-scheme-label') || document.querySelector('label[for="auth-scheme"]');
+  const field = document.getElementById('auth-scheme-field') || document.getElementById('auth-scheme')?.closest('.stack') || document.getElementById('auth-scheme')?.parentElement;
+  if (label) label.style.display = show ? '' : 'none';
+  if (field) field.style.display = show ? '' : 'none';
+}
+
 function setFeedback(message, type) {
   feedbackBox.textContent = message;
   feedbackBox.classList.remove('success', 'error');
@@ -274,11 +281,13 @@ async function loadProviderFields(provider) {
     authSchemeSelect.disabled = false;
     endpointInput.value = providerUrls.custom || '';
     authSchemeSelect.value = authSchemes.custom || 'bearer';
+    showAuthRow(true);
   } else {
     endpointInput.readOnly = true;
     authSchemeSelect.disabled = true;
     endpointInput.value = defaultBase(provider);
     authSchemeSelect.value = defaultAuth(provider);
+    showAuthRow(false);
   }
 
   if (!apiKeys[provider] || !encKeyB64) return;

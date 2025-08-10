@@ -175,6 +175,16 @@ style.textContent = `
 
 /* message spinner removed; buttons now show their own loader */
 `;
+// Append cross-theme icon filter variables used by our WA icons
+style.textContent += `
+:root { --icon-filter: none; }
+/* WhatsApp toggles dark mode via body.dark */
+body.dark { --icon-filter: invert(1) brightness(1.2); }
+/* Fallback when WA hasn't set body.dark but OS prefers dark */
+@media (prefers-color-scheme: dark) {
+  body:not(.dark) { --icon-filter: invert(1) brightness(1.2); }
+}
+`;
 document.head.appendChild(style);
 
   let errorBanner;

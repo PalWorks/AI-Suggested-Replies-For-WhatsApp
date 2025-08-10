@@ -703,3 +703,25 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Provider Settings grid (labels left, fields right) --- */
+#provider-settings .provider-settings {
+  display: grid;
+  grid-template-columns: 180px minmax(420px, 1fr); /* tighter left column */
+  align-items: center;
+  gap: 12px 18px;
+  max-width: 980px;
+}
+#provider-settings .provider-settings label { margin: 0; font-weight: 600; }
+#provider-settings .provider-settings .stack { display: flex; flex-direction: column; gap: 6px; }
+#provider-settings .provider-settings .api-key-wrap {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+}
+@media (max-width: 720px) {
+  #provider-settings .provider-settings { grid-template-columns: 1fr; }
+}
+
+/* Context Settings section: divider line with title below; extra spacing */
+#context-settings { border-top: 1px solid var(--divider); padding-top: 14px; margin-top: 8px; }
+#context-settings > legend { display: block; margin: 6px 0 12px; padding: 0; }
+#context-settings .form-row + .form-row { margin-top: 14px; }
