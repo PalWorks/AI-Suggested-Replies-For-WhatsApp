@@ -1,0 +1,309 @@
+[
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5",
+    "releaseDate": "Aug 2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5-mini",
+    "releaseDate": "Aug 2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-5-nano",
+    "releaseDate": "Aug 2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1-mini",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4.1-nano",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4o",
+    "releaseDate": "May 2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "gpt-4o-mini",
+    "releaseDate": "May 2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o1",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o1-preview",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o1-mini",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o1-pro",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o3",
+    "releaseDate": "2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o3-mini",
+    "releaseDate": "2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "o3-pro",
+    "releaseDate": "2025",
+    "apiEndpoint": "https://api.openai.com/v1/chat/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "text-embedding-3-large",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/embeddings"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "text-embedding-3-small",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.openai.com/v1/embeddings"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "dall-e-3",
+    "releaseDate": "2023",
+    "apiEndpoint": "https://api.openai.com/v1/images/generations"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "dall-e-2",
+    "releaseDate": "2022",
+    "apiEndpoint": "https://api.openai.com/v1/images/generations"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "whisper-1",
+    "releaseDate": "2022",
+    "apiEndpoint": "https://api.openai.com/v1/audio/transcriptions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "tts-1",
+    "releaseDate": "2023",
+    "apiEndpoint": "https://api.openai.com/v1/audio/speech"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "tts-1-hd",
+    "releaseDate": "2023",
+    "apiEndpoint": "https://api.openai.com/v1/audio/speech"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "babbage-002",
+    "releaseDate": "Legacy",
+    "apiEndpoint": "https://api.openai.com/v1/completions"
+  },
+  {
+    "provider": "OpenAI",
+    "model": "davinci-002",
+    "releaseDate": "Legacy",
+    "apiEndpoint": "https://api.openai.com/v1/completions"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 4 – Sonnet 4",
+    "releaseDate": "May 2025",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 4 – Opus 4",
+    "releaseDate": "May 2025",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude Opus 4.1",
+    "releaseDate": "Aug 2025",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 3.7 – Sonnet",
+    "releaseDate": "Feb 2025",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 3.5 – Sonnet",
+    "releaseDate": "Jun 2024",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 3 – Haiku",
+    "releaseDate": "Mar 2024",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 3 – Sonnet",
+    "releaseDate": "Mar 2024",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Anthropic",
+    "model": "Claude 3 – Opus",
+    "releaseDate": "Mar 2024",
+    "apiEndpoint": "https://api.anthropic.com/v1/messages"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral 7B",
+    "releaseDate": "Sep 2023",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mixtral 8x7B",
+    "releaseDate": "Dec 2023",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Codestral 22B",
+    "releaseDate": "May 2024",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mathstral 7B",
+    "releaseDate": "Jul 2024",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Pixtral Large",
+    "releaseDate": "Nov 2024",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Large 2",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Small 3.1",
+    "releaseDate": "Mar 2025",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Mistral Medium 3",
+    "releaseDate": "May 2025",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Magistral Small",
+    "releaseDate": "Jun 2025",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Mistral",
+    "model": "Magistral Medium",
+    "releaseDate": "Jun 2025",
+    "apiEndpoint": "https://api.mistral.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Google DeepMind",
+    "model": "Gemini 1.5 Pro",
+    "releaseDate": "Feb 2024",
+    "apiEndpoint": "https://generativelanguage.googleapis.com/v1beta/models"
+  },
+  {
+    "provider": "Google DeepMind",
+    "model": "Gemini 1.5 Flash",
+    "releaseDate": "Feb 2024",
+    "apiEndpoint": "https://generativelanguage.googleapis.com/v1beta/models"
+  },
+  {
+    "provider": "Google DeepMind",
+    "model": "Gemini Ultra",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://generativelanguage.googleapis.com/v1beta/models"
+  },
+  {
+    "provider": "Meta AI",
+    "model": "Llama 3 8B",
+    "releaseDate": "Apr 2024",
+    "apiEndpoint": "https://api.meta.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Meta AI",
+    "model": "Llama 3 70B",
+    "releaseDate": "Apr 2024",
+    "apiEndpoint": "https://api.meta.ai/v1/chat/completions"
+  },
+  {
+    "provider": "Alibaba",
+    "model": "Qwen 2.5",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+  },
+  {
+    "provider": "Alibaba",
+    "model": "Qwen 3",
+    "releaseDate": "2025",
+    "apiEndpoint": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok-1",
+    "releaseDate": "2024",
+    "apiEndpoint": "https://api.x.ai/v1/chat/completions"
+  },
+  {
+    "provider": "xAI",
+    "model": "Grok-3",
+    "releaseDate": "2025",
+    "apiEndpoint": "https://api.x.ai/v1/chat/completions"
+  }
+]
+

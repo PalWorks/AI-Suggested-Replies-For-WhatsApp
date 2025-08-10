@@ -21,6 +21,9 @@
           <li><button class="icon-item" data-tab="bugs" aria-label="Bug / Feature Request"><img src="../icons/Bug.svg" alt="Bug icon"></button></li>
           <li><button class="icon-item" data-tab="privacy" aria-label="Privacy"><img src="../icons/privacyicon.svg" alt="Privacy icon"></button></li>
           <li><button class="icon-item" data-tab="help" aria-label="Help"><img src="../icons/Help.svg" alt="Help icon"></button></li>
+          <li><button class="icon-item" data-tab="references" aria-label="References">
+            <img src="../icons/ReferencesIcon.svg" alt="References icon">
+          </button></li>
         </ul>
         <!-- Bottom rail: theme toggle + branding -->
         <div class="rail-bottom">
@@ -69,6 +72,10 @@
         <li><button class="nav-item" data-tab="help">
           <span class="nav-title">Help</span>
           <span class="nav-subtitle">Support</span>
+        </button></li>
+        <li><button class="nav-item" data-tab="references">
+          <span class="nav-title">References</span>
+          <span class="nav-subtitle">API endpoints for popular LLMs</span>
         </button></li>
       </ul>
     </nav>
@@ -221,6 +228,23 @@
       <section id="help" class="tab-content" role="tabpanel">
         <h1 class="page-title">Help</h1>
         <p>Check the <a href="https://chrome.google.com/webstore/detail/chatgpt-answers-for-whats/bmbidjjfpkmlddlbkljbphdgpnjnpogk" target="_blank" rel="noopener">extension listing</a> for details and support.</p>
+      </section>
+      <section id="references" class="tab-content" role="tabpanel">
+        <h1 class="page-title">References</h1>
+        <p class="helper">API endpoints for popular LLMs.</p>
+        <div class="references-table-wrapper">
+          <table id="references-table" class="references-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Model</th>
+                <th>Release Date</th>
+                <th>API Endpoint</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </section>
     </main>
   </div>
