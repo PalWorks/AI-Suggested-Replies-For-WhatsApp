@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   reloadLogsAndSummary();
   setupNavigation();
+  loadReferences();
 });
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
@@ -432,6 +433,48 @@ function renderLlmHistoryTable(logs) {
     row.appendChild(rt);
 
     tbody.appendChild(row);
+  });
+}
+
+async function loadReferences() {
+  try {
+    const res = await fetch('references.json');
+    if (!res.ok) return;
+    const data = await res.json();
+    renderReferencesTable(data);
+  } catch {}
+}
+
+function renderReferencesTable(rows) {
+  const tbody = document.querySelector('#references-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+
+    const tdProv = document.createElement('td');
+    tdProv.textContent = r.provider || '';
+    tr.appendChild(tdProv);
+
+    const tdModel = document.createElement('td');
+    tdModel.textContent = r.model || '';
+    tr.appendChild(tdModel);
+
+    const tdDate = document.createElement('td');
+    tdDate.textContent = r.releaseDate || '';
+    tr.appendChild(tdDate);
+
+    const tdEp = document.createElement('td');
+    const a = document.createElement('a');
+    a.href = r.apiEndpoint || '';
+    a.textContent = r.apiEndpoint || '';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    tdEp.appendChild(a);
+    tr.appendChild(tdEp);
+
+    tbody.appendChild(tr);
   });
 }
 
