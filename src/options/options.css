@@ -784,3 +784,66 @@ label {
 }
 
 #context-settings .form-row + .form-row { margin-top: 14px; }
+
+/* === Provider Settings: fixed desktop field width + aligned right edge === */
+:root { --ps-field-width: 720px; }
+@media (max-width: 1024px) { :root { --ps-field-width: 600px; } }
+@media (max-width: 860px)  { :root { --ps-field-width: 520px; } }
+
+/* Two-column grid: label + fixed-width field column */
+#provider-settings .provider-settings {
+  grid-template-columns: 180px var(--ps-field-width);
+  max-width: calc(180px + var(--ps-field-width));
+}
+
+/* Make all fields fill the field column exactly */
+#provider-settings .provider-settings input,
+#provider-settings .provider-settings select,
+#provider-settings .provider-settings textarea {
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
+}
+
+/* API key eye button lives inside the input; does not add width */
+#provider-settings .provider-settings .api-key-wrap {
+  position: relative;
+  display: block;
+}
+#provider-settings .provider-settings .api-key-wrap input {
+  padding-right: 42px;
+}
+#provider-settings .provider-settings .api-key-wrap .eye-icon {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 0;
+}
+
+/* Mobile: stack labels above fields, let width be fluid */
+@media (max-width: 720px) {
+  #provider-settings .provider-settings {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+  #provider-settings .provider-settings .api-key-wrap .eye-icon {
+    right: 8px;
+  }
+}
+
+/* === References: shrink first three columns, give URL the rest === */
+.references-table {
+  table-layout: fixed;   /* honor colgroup sizes */
+}
+.references-table col.col-prov  { width: 11rem; }
+.references-table col.col-model { width: 13rem; }
+.references-table col.col-date  { width: 9rem; }
+.references-table col.col-endpoint { width: auto; }
+
+.references-table td:last-child,
+.references-table th:last-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
