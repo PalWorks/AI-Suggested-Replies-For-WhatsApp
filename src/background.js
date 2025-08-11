@@ -79,10 +79,17 @@ async function sendLLM(prompt, tabId, inputChatData) {
   const startTime = Date.now();
   let outputText = '';
   try {
-    const {apiChoice, modelNames = {}} = await chrome.storage.local.get({apiChoice: 'openai', modelNames: {}});
+    const { apiChoice, modelNames = {}, providerUrls = {}, authSchemes = {} } =
+      await chrome.storage.local.get({ apiChoice: 'openai', modelNames: {}, providerUrls: {}, authSchemes: {} });
+
     const modelChoice = modelNames[apiChoice] || getDefaultModel(apiChoice);
-    const apiKey = await getApiKey(apiChoice);
-    if (!apiKey) {
+    const scheme = (apiChoice === 'custom') ? (authSchemes.custom || 'none') : 'bearer';
+
+    // Only some cases require a key
+    const requiresKey = (apiChoice !== 'custom') || (scheme !== 'none');
+    const apiKey = requiresKey ? await getApiKey(apiChoice) : '';
+
+    if (requiresKey && !apiKey) {
       const msg = 'Please set your API key in the extension options.';
       safeSendTabMessage(tabId, {type: 'error', error: msg});
       showToast(msg);
@@ -123,15 +130,14 @@ async function sendLLM(prompt, tabId, inputChatData) {
       headers.Authorization = `Bearer ${apiKey}`;
       body = JSON.stringify({...basePayload, model: modelChoice});
     } else if (apiChoice === 'custom') {
-      const { providerUrls = {}, authSchemes = {} } = await chrome.storage.local.get({ providerUrls: {}, authSchemes: {} });
       let base = providerUrls.custom || '';
-      while (base.endsWith('/') ) base = base.slice(0, -1);
+      while (base.endsWith('/')) base = base.slice(0, -1);
       if (!base) throw new Error('Custom endpoint missing');
 
       url = `${base}/chat/completions`;
-      const scheme = authSchemes.custom || 'bearer';
-      if (scheme === 'bearer') headers.Authorization = `Bearer ${apiKey}`;
-      else headers['x-api-key'] = apiKey;
+      if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
+      if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
+      // scheme === 'none' -> no auth header
 
       body = JSON.stringify({ ...basePayload, model: modelChoice });
     } else {
@@ -238,21 +244,41 @@ async function sendLLM(prompt, tabId, inputChatData) {
       status: 'success'
     });
   } catch (err) {
-    let msg;
+    let msg = '';
     if (err.name === 'AbortError') {
       msg = 'Request timed out';
-    } else if (/^HTTP 401/.test(err.message)) {
-      msg = 'Invalid API key';
-    } else if (/^HTTP/.test(err.message) || /Failed to fetch/i.test(err.message)) {
-      msg = 'Network error';
-    } else if (err.message === 'Unexpected API response') {
-      msg = 'Unexpected API response';
     } else {
-      msg = `Unknown error: ${err.message}`;
+      const m = String(err.message || '').match(/HTTP\s+(\d{3})/i);
+      if (m) {
+        const code = parseInt(m[1], 10);
+        msg = statusToUserMessage(code);
+      } else if (/Failed to fetch/i.test(String(err.message)) || err instanceof TypeError) {
+        // Network/CORS failures or server down
+        msg = 'Cannot reach server — check that your endpoint is correct (include /v1) and that the server is running.';
+      } else if (err.message === 'Unexpected API response') {
+        msg = 'Unexpected API response — check model name and endpoint.';
+      } else {
+        msg = `Unknown error: ${err.message || err}`;
+      }
     }
-    safeSendTabMessage(tabId, {type: 'error', error: msg});
+    safeSendTabMessage(tabId, { type: 'error', error: msg });
     showToast(msg);
     logToGitHub(`LLM request failed: ${msg}\n${err.stack || ''}`).catch(() => {});
+  }
+}
+
+function statusToUserMessage(status) {
+  switch (status) {
+    case 400: return 'Bad request — often wrong model name or invalid body. Check “Model Name” in Options.';
+    case 401: return 'Unauthorized — invalid API key or auth required. If using local server, pick “No Auth header”.';
+    case 402: return 'Payment required / quota exceeded — check your provider plan/credits.';
+    case 403: return 'Forbidden — key lacks permission for this model/endpoint.';
+    case 404: return 'Endpoint not found — verify API Endpoint and make sure it ends with /v1 (e.g., http://localhost:1234/v1).';
+    case 408: return 'Server timeout — the provider took too long to respond.';
+    case 429: return 'Rate limit exceeded — slow down or use a less busy model.';
+    default:
+      if (status >= 500 && status <= 599) return 'Provider server error — try again in a moment.';
+      return `HTTP ${status} — unexpected response from provider.`;
   }
 }
 
@@ -266,9 +292,15 @@ async function initExtension() {
       sendLLM(request.prompt, sender.tab.id, request.inputChatData);
       sendResponse({received: true});
     } else if (request.message === 'providerChanged' && request.providerUrl) {
-      chrome.permissions.request({origins: [request.providerUrl]}, () => {
-        sendResponse({received: true});
-      });
+      try {
+        const u = new URL(request.providerUrl);
+        const origin = `${u.origin}/*`;
+        chrome.permissions.request({ origins: [origin] }, () => {
+          sendResponse({ received: true });
+        });
+      } catch (e) {
+        sendResponse({ received: true });
+      }
       return true;
     }
     return true;
