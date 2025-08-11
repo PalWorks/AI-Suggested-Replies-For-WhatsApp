@@ -2,6 +2,17 @@
   // contentScript.js - version 2025-08-05T00:44:54Z
   'use strict';
   const {extensionEnabled = true} = await chrome.storage.local.get({extensionEnabled: true});
+  // Apply extension theme when explicitly set (overrides WA/OS); 'auto' keeps defaults
+  let themeMode = 'auto';
+  try {
+    const { themePreference = 'auto' } = await chrome.storage.sync.get({ themePreference: 'auto' });
+    themeMode = themePreference || 'auto';
+  } catch {}
+  if (themeMode === 'light' || themeMode === 'dark') {
+    document.documentElement.setAttribute('data-gpt-theme', themeMode);
+  } else {
+    document.documentElement.removeAttribute('data-gpt-theme');
+  }
   if (!extensionEnabled) return;
   try {
     const { apiChoice = 'openai', providerUrls = {} } =
@@ -86,6 +97,7 @@ style.textContent = `
   visibility: hidden; /* Hide label but retain width */
 }
 
+
 .gptbtn .spinner {
   width: 20px;
   height: 20px;
@@ -93,11 +105,10 @@ style.textContent = `
   border-top-color: var(--gpt-btn-spinner-top);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
-  position: absolute; /* Overlay spinner in the center */
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: none; /* Only visible while loading */
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: none; /* visible only in loading state */
 }
 
 .gptbtn.loading .spinner {
@@ -199,8 +210,49 @@ body.dark { --icon-filter: invert(1) brightness(1.2); }
 @media (prefers-color-scheme: dark) {
   body:not(.dark) { --icon-filter: invert(1) brightness(1.2); }
 }
+/* Extension theme overrides (take precedence when attribute is present) */
+[data-gpt-theme="dark"] {
+  --icon-filter: invert(1) brightness(1.2);
+  --gpt-btn-spinner-border: rgba(255,255,255,.1);
+  --gpt-btn-spinner-top: #d1d7db;
+  --message-spinner-border: rgba(255,255,255,.1);
+  --message-spinner-top: #d1d7db;
+}
+[data-gpt-theme="light"] {
+  --icon-filter: none;
+  --gpt-btn-spinner-border: rgba(0,0,0,.1);
+  --gpt-btn-spinner-top: #54656F;
+  --message-spinner-border: rgba(0,0,0,.1);
+  --message-spinner-top: #54656F;
+}
 `;
 document.head.appendChild(style);
+
+  // Map in-flight requests so tokens/done/error land in the right chat
+  const pendingRequests = new Map(); // requestId -> { paragraphEl, buttonObject, streamingText, timeoutId }
+  function makeRequestId() {
+    if (crypto?.randomUUID) return crypto.randomUUID();
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+  function startTimeoutFor(requestId) {
+    const id = setTimeout(() => {
+      const entry = pendingRequests.get(requestId);
+      if (!entry) return;
+      const { buttonObject, paragraphEl } = entry;
+      if (buttonObject) buttonObject.setBusy(false);
+      if (paragraphEl) paragraphEl.textContent = 'No response from server. Please try again.';
+      pendingRequests.delete(requestId);
+      if (showToast) showToast('No response from server. Please try again.');
+    }, 25000);
+    const entry = pendingRequests.get(requestId) || {};
+    entry.timeoutId = id;
+    pendingRequests.set(requestId, entry);
+  }
+  function clearTimeoutFor(requestId) {
+    const entry = pendingRequests.get(requestId);
+    if (entry?.timeoutId) clearTimeout(entry.timeoutId);
+    if (entry) entry.timeoutId = null;
+  }
 
   let errorBanner;
 
@@ -242,7 +294,6 @@ document.head.appendChild(style);
     newFooterParagraph.parentNode.insertBefore(errorBanner, newFooterParagraph);
   }
 
-  let streamingText = '';
   let loaderTimeoutId;
 
   function clearLoaderTimeout() {
@@ -393,22 +444,38 @@ function withPermission(callback) {
 }
 
 function sendPrompt(prompt, buttonObject, inputChatData) {
+  const requestId = makeRequestId();
   lastPrompt = prompt;
   lastButtonObject = buttonObject;
   lastInputChatData = inputChatData || '';
+
+  // Register routing for THIS chat’s UI elements
+  pendingRequests.set(requestId, {
+    paragraphEl: newFooterParagraph,
+    buttonObject,
+    streamingText: ''
+  });
+
   activeButtonObject = buttonObject;
   buttonObject.setBusy(true);
-  startLoaderTimeout();
-  streamingText = '';
   writeTextToSuggestionField('', true);
+  startLoaderTimeout(); // keep your existing global as a safety timeout too
+  startTimeoutFor(requestId); // request-scoped
+
   chrome.runtime.sendMessage(
     {
       message: 'sendChatToGpt',
       prompt,
-      inputChatData
+      inputChatData,
+      requestId
     },
     response => {
       if (chrome.runtime.lastError || !response) {
+        clearTimeoutFor(requestId);
+        const entry = pendingRequests.get(requestId);
+        if (entry?.buttonObject) entry.buttonObject.setBusy(false);
+        if (entry?.paragraphEl) entry.paragraphEl.textContent = '';
+        pendingRequests.delete(requestId);
         handleMessagingError();
       }
     }
@@ -638,38 +705,45 @@ async function writeTextToSuggestionField(response, isLoading = false) {
 }
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Clear per-request timeout when any terminal/streaming message arrives
     if (
       ['token', 'done', 'error'].includes(request.type) ||
       request.message === 'gptResponse'
     ) {
+      if (request.requestId) clearTimeoutFor(request.requestId);
       clearLoaderTimeout();
     }
+
+    const id = request.requestId;
+    const entry = id ? pendingRequests.get(id) : null;
+
     if (request.type === 'token') {
       hideErrorBanner();
-      streamingText += request.data;
-      writeTextToSuggestionField(streamingText);
+      if (entry) {
+        entry.streamingText += request.data;
+        if (entry.paragraphEl) entry.paragraphEl.textContent = entry.streamingText;
+      }
     } else if (request.type === 'done') {
-      if (activeButtonObject) activeButtonObject.setBusy(false);
+      if (entry?.buttonObject) entry.buttonObject.setBusy(false);
+      pendingRequests.delete(id);
     } else if (request.type === 'error') {
-      if (activeButtonObject) activeButtonObject.setBusy(false);
-      writeTextToSuggestionField('');
+      if (entry?.buttonObject) entry.buttonObject.setBusy(false);
+      if (entry?.paragraphEl) entry.paragraphEl.textContent = '';
       const msg = request.error || request.data || 'Failed to generate reply';
       showErrorBanner(msg);
       if (showToast) showToast(msg);
+      pendingRequests.delete(id);
     } else if (request.type === 'showToast') {
       if (showToast) showToast(request.message);
     } else if (request.message === 'gptResponse') {
       hideErrorBanner();
-      const response = request.response;
-      if (activeButtonObject) activeButtonObject.setBusy(false);
-      if (response.error !== null && response.error !== undefined) {
-        writeTextToSuggestionField('');
-        showErrorBanner(response.error.message);
-        sendResponse({received: true});
-        return;
+      if (entry?.buttonObject) entry.buttonObject.setBusy(false);
+      if (entry?.paragraphEl && request.response?.text) {
+        entry.paragraphEl.textContent = request.response.text.replace(/^Me:\s*/, '');
       }
-      writeTextToSuggestionField(response.text.replace(/^Me:\s*/, ''));
+      pendingRequests.delete(id);
     }
+
     sendResponse({received: true});
   });
 

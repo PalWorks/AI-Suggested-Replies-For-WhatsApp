@@ -86,7 +86,7 @@ async function getApiKey(provider) {
 }
 
 
-async function sendLLM(prompt, tabId, inputChatData) {
+async function sendLLM(prompt, tabId, inputChatData, requestId) {
   const startTime = Date.now();
   let firstTokenAt = 0;
   let outputText = '';
@@ -103,7 +103,8 @@ async function sendLLM(prompt, tabId, inputChatData) {
 
     if (requiresKey && !apiKey) {
       const msg = 'Please set your API key in the extension options.';
-      safeSendTabMessage(tabId, {type: 'error', error: msg});
+      safeSendTabMessage(tabId, {type: 'error', error: msg, requestId});
+      safeSendTabMessage(tabId, {type: 'showToast', message: msg, requestId});
       showToast(msg);
       return;
     }
@@ -179,9 +180,10 @@ async function sendLLM(prompt, tabId, inputChatData) {
       outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
-        response: {text}
+        response: {text},
+        requestId
       });
-      safeSendTabMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done', requestId});
     } else if (response.body && response.body.getReader) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -209,14 +211,14 @@ async function sendLLM(prompt, tabId, inputChatData) {
             if (token) {
               if (!firstTokenAt) firstTokenAt = Date.now();
               outputText += token;
-              safeSendTabMessage(tabId, {type: 'token', data: token});
+              safeSendTabMessage(tabId, {type: 'token', data: token, requestId});
             }
           } catch (e) {
             // ignore parse errors
           }
         }
       }
-      safeSendTabMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done', requestId});
     } else {
       const data = await response.json().catch(() => {
         throw new Error('Unexpected API response');
@@ -233,9 +235,10 @@ async function sendLLM(prompt, tabId, inputChatData) {
       outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
-        response: {text}
+        response: {text},
+        requestId
       });
-      safeSendTabMessage(tabId, {type: 'done'});
+      safeSendTabMessage(tabId, {type: 'done', requestId});
     }
 
     const endTime = Date.now();
@@ -280,7 +283,8 @@ async function sendLLM(prompt, tabId, inputChatData) {
         msg = `Unknown error: ${err.message || err}`;
       }
     }
-    safeSendTabMessage(tabId, { type: 'error', error: msg });
+    safeSendTabMessage(tabId, { type: 'error', error: msg, requestId });
+    safeSendTabMessage(tabId, { type: 'showToast', message: msg, requestId });
     showToast(msg);
     logToGitHub(`LLM request failed: ${msg}\n${err.stack || ''}`).catch(() => {});
   }
@@ -308,7 +312,7 @@ async function initExtension() {
       chrome.runtime.openOptionsPage();
       sendResponse({received: true});
     } else if (request.message === 'sendChatToGpt') {
-      sendLLM(request.prompt, sender.tab.id, request.inputChatData);
+      sendLLM(request.prompt, sender.tab.id, request.inputChatData, request.requestId);
       sendResponse({received: true});
     } else if (request.message === 'providerChanged' && request.providerUrl) {
       try {
