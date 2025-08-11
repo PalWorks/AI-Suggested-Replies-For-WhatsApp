@@ -380,6 +380,7 @@ button {
   border: 1px solid var(--border-color);
 }
 
+/* Inner scroll boxes (Input/Output cells) */
 .cell-scroll {
   max-height: 160px;
   overflow-y: auto;
@@ -392,13 +393,21 @@ button {
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  /* Optional subtle inner delineation in dark mode */
-  box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset;
+  box-shadow: none;
+  will-change: scroll-position;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  scrollbar-gutter: stable both-edges;
 }
 
+/* Horizontal scroller performance hints */
 .history-table-wrapper {
   overflow-x: auto;
   min-width: 0;            /* prevent table from forcing sidebar shrink */
+  contain: layout paint;
+  will-change: transform;
+  transform: translateZ(0);
+  scrollbar-gutter: stable both-edges;
 }
 
 .history-table {
@@ -413,13 +422,26 @@ button {
   padding: 8px;
 }
 
-.history-table tbody tr:not(:last-child) td {
+/* Clearer horizontal rules between rows */
+.history-table tbody tr td {
   border-bottom: 1px solid var(--border-color);
 }
 
+/* --- History table: sticky header --- */
 .history-table thead th {
   color: var(--text-primary);
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;                            /* sit above scrolling body */
+  background: var(--bg-main);            /* solid background when sticky */
+  box-shadow: 0 1px 0 var(--border-color);
+  background-clip: padding-box;
+}
+
+/* Dark mode: sturdier header divider */
+:root[data-theme="dark"] .history-table thead th {
+  box-shadow: 0 1px 0 rgba(255,255,255,.08);
 }
 
 .history-table .col-ts    { width: 12rem; }
