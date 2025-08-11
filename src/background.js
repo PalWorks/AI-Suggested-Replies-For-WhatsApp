@@ -16,6 +16,17 @@ function safeSendTabMessage(tabId, message) {
   });
 }
 
+function sanitizeBaseEndpoint(raw) {
+  if (!raw) return '';
+  try {
+    const u = new URL(String(raw).trim());
+    u.pathname = '/v1';
+    u.search = '';
+    u.hash = '';
+    return `${u.origin}/v1`;
+  } catch { return ''; }
+}
+
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
 
 let decryptedApiKeys = {};
@@ -77,6 +88,7 @@ async function getApiKey(provider) {
 
 async function sendLLM(prompt, tabId, inputChatData) {
   const startTime = Date.now();
+  let firstTokenAt = 0;
   let outputText = '';
   try {
     const { apiChoice, modelNames = {}, providerUrls = {}, authSchemes = {} } =
@@ -131,14 +143,11 @@ async function sendLLM(prompt, tabId, inputChatData) {
       body = JSON.stringify({...basePayload, model: modelChoice});
     } else if (apiChoice === 'custom') {
       let base = providerUrls.custom || '';
-      while (base.endsWith('/')) base = base.slice(0, -1);
+      base = sanitizeBaseEndpoint(base);
       if (!base) throw new Error('Custom endpoint missing');
-
       url = `${base}/chat/completions`;
       if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
       if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
-      // scheme === 'none' -> no auth header
-
       body = JSON.stringify({ ...basePayload, model: modelChoice });
     } else {
       url = 'https://api.openai.com/v1/chat/completions';
@@ -166,6 +175,7 @@ async function sendLLM(prompt, tabId, inputChatData) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
+      if (!firstTokenAt) firstTokenAt = Date.now();
       outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
@@ -197,6 +207,7 @@ async function sendLLM(prompt, tabId, inputChatData) {
             }
             const token = parsed.choices?.[0]?.delta?.content;
             if (token) {
+              if (!firstTokenAt) firstTokenAt = Date.now();
               outputText += token;
               safeSendTabMessage(tabId, {type: 'token', data: token});
             }
@@ -218,6 +229,7 @@ async function sendLLM(prompt, tabId, inputChatData) {
         throw new Error('Unexpected API response');
       }
       usage = data.usage;
+      if (!firstTokenAt) firstTokenAt = Date.now();
       outputText = text;
       safeSendTabMessage(tabId, {
         message: 'gptResponse',
@@ -227,9 +239,13 @@ async function sendLLM(prompt, tabId, inputChatData) {
     }
 
     const endTime = Date.now();
+    const ttfbMs = Math.max(0, (firstTokenAt || endTime) - startTime);
     const tokensPrompt = usage?.prompt_tokens || usage?.input_tokens || 0;
     const tokensCompletion = usage?.completion_tokens || usage?.output_tokens || 0;
     const tokensTotal = usage?.total_tokens || tokensPrompt + tokensCompletion;
+    const genMs = Math.max(0, endTime - (firstTokenAt || endTime));
+    const tokensPerSec = (tokensCompletion > 0 && genMs > 0) ? (tokensCompletion / (genMs / 1000)) : 0;
+
     await addHistory({
       ts: Date.now(),
       provider: apiChoice,
@@ -240,7 +256,10 @@ async function sendLLM(prompt, tabId, inputChatData) {
       tokensPrompt,
       tokensCompletion,
       tokensTotal,
+      ttfbMs,
       durationMs: endTime - startTime,
+      genMs,
+      tokensPerSec,
       status: 'success'
     });
   } catch (err) {

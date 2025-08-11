@@ -121,8 +121,8 @@
               <!-- API Endpoint (read-only for built-ins, editable for Custom) -->
               <label for="api-endpoint">API Endpoint</label>
               <div class="stack">
-                <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="https://host.example.com/v1">
-                <div class="helper">Base URL of your provider (OpenAI‑compatible). For example: <code>https://localhost:11434/v1</code>.</div>
+                <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="http://localhost:1234/v1">
+                <div class="helper">Base URL of your provider (OpenAI‑compatible). Paste anything, we'll auto‑correct to <code>.../v1</code>. Do NOT include <code>/chat/completions</code>.</div>
               </div>
 
               <!-- Auth Header (show only for Custom; we’ll toggle via JS) -->
@@ -178,6 +178,8 @@
                 <col class="col-ptok">
                 <col class="col-ctok">
                 <col class="col-ttok">
+                <col class="col-ttft">
+                <col class="col-tps">
                 <col class="col-rt">
               </colgroup>
               <thead>
@@ -189,6 +191,8 @@
                   <th>Prompt Tokens</th>
                   <th>Completion Tokens</th>
                   <th>Total Tokens</th>
+                  <th>TTFT (ms)</th>
+                  <th>Tok/s</th>
                   <th>Response Time (ms)</th>
                 </tr>
               </thead>
