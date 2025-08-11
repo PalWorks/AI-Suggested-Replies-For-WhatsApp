@@ -139,11 +139,33 @@ toggleBtn.addEventListener('click', () => {
   toggleBtn.setAttribute('aria-label', isText ? 'Show API key' : 'Hide API key');
 });
 
+authSchemeSelect.addEventListener('change', () => {
+  toggleApiKeyRow();
+  clearTimeout(validateTimeout);
+  validateTimeout = setTimeout(validateApiKey, 300);
+});
+
 function showAuthRow(show) {
   const label = document.getElementById('auth-scheme-label') || document.querySelector('label[for="auth-scheme"]');
   const field = document.getElementById('auth-scheme-field') || document.getElementById('auth-scheme')?.closest('.stack') || document.getElementById('auth-scheme')?.parentElement;
   if (label) label.style.display = show ? '' : 'none';
   if (field) field.style.display = show ? '' : 'none';
+}
+
+function toggleApiKeyRow() {
+  const keyLabel = document.querySelector('label[for="api-key"]');
+  // The field container is the .stack right after the label
+  const keyField = keyLabel ? keyLabel.nextElementSibling : null;
+
+  const provider = apiChoiceSelect.value;
+  const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
+  const needsKey = (scheme !== 'none');
+
+  if (keyLabel) keyLabel.style.display = needsKey ? '' : 'none';
+  if (keyField) keyField.style.display = needsKey ? '' : 'none';
+
+  // Clear any validation text when hiding the key
+  if (!needsKey) setFeedback('');
 }
 
 function setFeedback(message, type) {
@@ -175,7 +197,13 @@ async function getOrCreateEncKey() {
 async function validateApiKey() {
   const apiKey = apiKeyInput.value.trim();
   const provider = apiChoiceSelect.value;
-  if (!apiKey) {
+
+  const scheme = (provider === 'custom'
+    ? (authSchemeSelect.value || 'none')
+    : defaultAuth(provider));
+
+  // For keyless custom endpoints, still try to fetch /models
+  if (!apiKey && !(provider === 'custom' && scheme === 'none')) {
     setFeedback('', '');
     return;
   }
@@ -185,10 +213,6 @@ async function validateApiKey() {
     : defaultBase(provider);
   while (base.endsWith('/')) base = base.slice(0, -1);
 
-  const scheme = (provider === 'custom'
-    ? (authSchemeSelect.value || 'bearer')
-    : defaultAuth(provider));
-
   if (!base) {
     setFeedback('Enter a valid endpoint', 'error');
     return;
@@ -196,17 +220,22 @@ async function validateApiKey() {
 
   const url = `${base}/models`;
   const headers = {};
-  if (scheme === 'bearer') headers.Authorization = `Bearer ${apiKey}`;
-  else headers['x-api-key'] = apiKey;
+  if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
   if (provider === 'openrouter') {
     headers['HTTP-Referer'] = 'https://web.whatsapp.com';
     headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
   }
+
   try {
-    const res = await fetch(url, {headers});
-    setFeedback(res.ok ? 'Key verified' : 'Invalid key', res.ok ? 'success' : 'error');
-  } catch {
-    setFeedback('Error verifying key', 'error');
+    const res = await fetch(url, { headers });
+    if (scheme === 'none') {
+      setFeedback(res.ok ? 'Endpoint reachable' : `Endpoint error (${res.status})`, res.ok ? 'success' : 'error');
+    } else {
+      setFeedback(res.ok ? 'Key verified' : 'Invalid key', res.ok ? 'success' : 'error');
+    }
+  } catch (e) {
+    setFeedback('Connection error (is the server running?)', 'error');
   }
 }
 
@@ -229,8 +258,9 @@ async function saveOptions(e) {
 
   const key = await getOrCreateEncKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
+
   let encrypted;
-  if (apiKey) {
+  if (apiKey && !(provider === 'custom' && authScheme === 'none')) {
     encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
     apiKeys[provider] = {encryptedKey: bufToB64(encrypted), iv: bufToB64(iv)};
   } else {
@@ -281,7 +311,7 @@ async function loadProviderFields(provider) {
     endpointInput.readOnly = false;
     authSchemeSelect.disabled = false;
     endpointInput.value = providerUrls.custom || '';
-    authSchemeSelect.value = authSchemes.custom || 'bearer';
+    authSchemeSelect.value = authSchemes.custom || 'none';
     showAuthRow(true);
   } else {
     endpointInput.readOnly = true;
@@ -290,6 +320,8 @@ async function loadProviderFields(provider) {
     authSchemeSelect.value = defaultAuth(provider);
     showAuthRow(false);
   }
+
+  toggleApiKeyRow();
 
   if (!apiKeys[provider] || !encKeyB64) return;
   try {
