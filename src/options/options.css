@@ -412,8 +412,9 @@ button {
 
 .history-table {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;     /* use our column widths; ignore content min-width */
+  border-collapse: separate;   /* sticky <th> works reliably with separate */
+  border-spacing: 0;           /* keeps the same visual appearance (no gaps) */
+  table-layout: fixed;
 }
 
 .history-table th,
@@ -422,21 +423,34 @@ button {
   padding: 8px;
 }
 
-/* Clearer horizontal rules between rows */
-.history-table tbody tr td {
+/* Clear row dividers for every row */
+.history-table tbody td {
   border-bottom: 1px solid var(--border-color);
+  background-clip: padding-box;   /* avoids paint bleeding in some themes */
 }
 
 /* --- History table: sticky header --- */
 .history-table thead th {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Sticky header row */
+.history-table thead {
   position: sticky;
   top: 0;
-  z-index: 2;                            /* sit above scrolling body */
-  background: var(--bg-main);            /* solid background when sticky */
-  box-shadow: 0 1px 0 var(--border-color);
+  z-index: 3;
+  background: var(--bg-main);
+}
+
+/* Sticky header cells (works in Chrome when table is separate) */
+.history-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--bg-main);
   background-clip: padding-box;
+  box-shadow: 0 1px 0 var(--border-color); /* subtle divider under header */
 }
 
 /* Dark mode: sturdier header divider */
