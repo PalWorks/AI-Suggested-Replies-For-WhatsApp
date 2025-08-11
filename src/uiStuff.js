@@ -26,22 +26,25 @@ function createGptButton(label = 'Suggest Response', id) {
 }
 
 function createButtonEmpty(title) {
-    const buttonElement = document.createElement("button");
-    buttonElement.innerHTML = "<button class=\"svlsagor\"><span><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" preserveAspectRatio=\"xMidYMid meet\"></svg></span></button>";
-    buttonElement.setAttribute('title', title);
-    const svg = buttonElement.querySelector('svg');
-    const inner = buttonElement.querySelector('button');
-    if (inner) {
-      inner.style.display = 'flex';
-      inner.style.alignItems = 'center';
-      inner.style.justifyContent = 'center';
-      inner.style.width = '24px';
-      inner.style.height = '24px';
-      inner.style.padding = '0';
-      inner.style.border = 'none';
-      inner.style.background = 'transparent';
-    }
-    return {svg, buttonElement};
+  const buttonElement = document.createElement('button');
+  buttonElement.innerHTML = '<button class="svlsagor"><span><svg viewBox="0 0 24 24" width="20" height="20" preserveAspectRatio="xMidYMid meet"></svg></span></button>';
+  buttonElement.setAttribute('title', title);
+  // Make inline SVG honor theme color
+  buttonElement.style.color = 'var(--gpt-icon-color)';
+  const svg = buttonElement.querySelector('svg');
+  const inner = buttonElement.querySelector('button');
+  if (inner) {
+    inner.style.display = 'flex';
+    inner.style.alignItems = 'center';
+    inner.style.justifyContent = 'center';
+    inner.style.width = '24px';
+    inner.style.height = '24px';
+    inner.style.padding = '0';
+    inner.style.border = 'none';
+    inner.style.background = 'transparent';
+    inner.style.color = 'var(--gpt-icon-color)';
+  }
+  return {svg, buttonElement};
 }
 
 function createAndAddOptionsButton(newButtonContainer) {
@@ -84,9 +87,6 @@ function createAndAddOptionsButton(newButtonContainer) {
         svgElement.appendChild(cloned);
       });
     });
-  const innerBtn = optionsButton.querySelector('button');
-  optionsButton.style.filter = 'var(--icon-filter)';
-  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   optionsButton.addEventListener('click', () => {
     chrome.runtime.sendMessage({action: 'openOptionsPage'}, response => {
       if (chrome.runtime.lastError || !response) {
@@ -115,9 +115,6 @@ function creatCopyButton(newFooter, newButtonContainer) {
         svgElement.appendChild(path);
       });
     });
-  const innerBtn = copyButton.querySelector('button');
-  copyButton.style.filter = 'var(--icon-filter)';
-  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   newButtonContainer.appendChild(copyButton);
   return copyButton;
 }
@@ -140,9 +137,6 @@ function createDeleteButton(newFooter, newButtonContainer) {
         svgElement.appendChild(path);
       });
     });
-  const innerBtn = deleteButton.querySelector('button');
-  deleteButton.style.filter = 'var(--icon-filter)';
-  if (innerBtn) innerBtn.style.filter = 'var(--icon-filter)';
   deleteButton.style.display = 'none';
   newButtonContainer.appendChild(deleteButton);
   return deleteButton;
