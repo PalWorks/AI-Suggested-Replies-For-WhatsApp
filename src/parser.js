@@ -33,6 +33,77 @@
     'qr code expired'
   ];
 
+  // Try to get a timestamp string from WhatsApp's DOM for a given message node.
+  // Priority: data-pre-plain-text (contains [time, date] prefix) -> msg meta aria-label/text -> empty.
+  function getRawTimestampFromNode(node) {
+    if (!node) return '';
+    const carrier = node.closest?.('[data-pre-plain-text]') || node.querySelector?.('[data-pre-plain-text]');
+    if (carrier) {
+      const s = carrier.getAttribute('data-pre-plain-text') || '';
+      const m = s.match(/^\s*\[([^\]]+)\]/);
+      if (m) return m[1].trim();
+    }
+    const meta = node.querySelector?.('[data-testid="msg-meta"], time, [aria-label*="AM"], [aria-label*="PM"]');
+    if (meta) {
+      return (meta.getAttribute?.('aria-label') || meta.textContent || '').trim();
+    }
+    return '';
+  }
+
+  // Convert common "time, date" formats into a local ISO-like string with timezone offset.
+  // Returns "" if parsing fails.
+  function toLocalIso(tsText) {
+    if (!tsText) return '';
+    try {
+      const parts = tsText.split(',');
+      const timePart = (parts[0] || '').trim();
+      const datePart = (parts[1] || '').trim();
+      let h = 0, m = 0;
+      const t12 = timePart.match(/^(\d{1,2}):(\d{2})\s*([ap]m)$/i);
+      const t24 = timePart.match(/^(\d{1,2}):(\d{2})$/);
+      if (t12) {
+        h = parseInt(t12[1], 10); m = parseInt(t12[2], 10);
+        const ap = t12[3].toLowerCase();
+        if (ap === 'pm' && h < 12) h += 12;
+        if (ap === 'am' && h === 12) h = 0;
+      } else if (t24) {
+        h = parseInt(t24[1], 10); m = parseInt(t24[2], 10);
+      } else {
+        return '';
+      }
+      const d = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (!d) return '';
+      const day = parseInt(d[1], 10);
+      const mon = parseInt(d[2], 10) - 1;
+      let year = parseInt(d[3], 10);
+      if (year < 100) year += 2000;
+
+      const dt = new Date(year, mon, day, h, m, 0, 0);
+      const pad = n => String(n).padStart(2, '0');
+      const offMin = -dt.getTimezoneOffset();
+      const sign = offMin >= 0 ? '+' : '-';
+      const offH = pad(Math.floor(Math.abs(offMin) / 60));
+      const offM = pad(Math.abs(offMin) % 60);
+      return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}${sign}${offH}:${offM}`;
+    } catch {
+      return '';
+    }
+  }
+
+  // Build the final line sent to the LLM.
+  // If we can compute a local ISO timestamp -> use that.
+  // Else, if we only have a raw readable timestamp -> include that.
+  // Else, keep the old "Name: text" form.
+  function formatLineWithTimestamp({ name, text, node }) {
+    const raw = getRawTimestampFromNode(node);
+    const iso = toLocalIso(raw);
+    const safeName = (name || '').trim();
+    const safeText = (text || '').trim();
+    if (iso) return `[${iso}] ${safeName}: ${safeText}`;
+    if (raw) return `[${raw}] ${safeName}: ${safeText}`;
+    return `${safeName}: ${safeText}`;
+  }
+
   function extractRecentMessages({limit = 10, filtered = true, root = document.getElementById('main')} = {}) {
     try {
       if (!root) return [];
@@ -59,17 +130,23 @@
           }
         });
         const text = messageStringCollector.trim();
+        const nameMatch = text.match(/^([^:]+):\s*/);
+        const senderName = nameMatch ? nameMatch[1].trim() : '';
+        const content = text.replace(/^.*?:\s*/, '').trim();
         if (filtered) {
           const lowered = text.toLowerCase();
-          const content = text.replace(/^.*?:\s*/, '').trim();
           const hasMedia = el.querySelector('img, video, canvas') !== null;
           const isBlacklisted = NON_CONVERSATIONAL_PATTERNS.some(p => lowered.includes(p));
           const isMediaOnly = hasMedia && content === '';
           if (text && !isBlacklisted && !isMediaOnly) {
-            chatHistory.push(messageStringCollector);
+            chatHistory.push(
+              formatLineWithTimestamp({ name: senderName, text: content, node: el })
+            );
           }
         } else if (text) {
-          chatHistory.push(messageStringCollector);
+          chatHistory.push(
+            formatLineWithTimestamp({ name: senderName, text: content, node: el })
+          );
         }
       });
       return chatHistory;
@@ -95,7 +172,8 @@
         new Set(
           chatHistory
             .map(line => {
-              const m = line.match(/^([^:]+):\s/);
+              const cleaned = line.replace(/^\[[^\]]+\]\s*/, '');
+              const m = cleaned.match(/^([^:]+):\s/);
               const name = m ? m[1].trim() : '';
               return name && name !== 'Me' ? name : null;
             })
