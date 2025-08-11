@@ -429,6 +429,8 @@ button {
 .history-table .col-ptok,
 .history-table .col-ctok,
 .history-table .col-ttok  { width: 7rem; text-align: right; }
+.history-table .col-ttft { width: 7rem; text-align: right; }
+.history-table .col-tps  { width: 7rem; text-align: right; }
 .history-table .col-rt    { width: 9rem; text-align: right; }
 
 @media (max-width: 1400px) {
@@ -436,7 +438,9 @@ button {
   .history-table .col-output { width: 20rem; }
   .history-table .col-ptok,
   .history-table .col-ctok,
-  .history-table .col-ttok { width: 6rem; }
+  .history-table .col-ttok,
+  .history-table .col-ttft,
+  .history-table .col-tps { width: 6rem; }
   .history-table .col-rt { width: 8rem; }
 }
 @media (max-width: 1200px) {
@@ -448,10 +452,14 @@ button {
 .history-table th:nth-child(6),
 .history-table th:nth-child(7),
 .history-table th:nth-child(8),
+.history-table th:nth-child(9),
+.history-table th:nth-child(10),
 .history-table td:nth-child(5),
 .history-table td:nth-child(6),
 .history-table td:nth-child(7),
-.history-table td:nth-child(8) {
+.history-table td:nth-child(8),
+.history-table td:nth-child(9),
+.history-table td:nth-child(10) {
   text-align: right;
 }
 

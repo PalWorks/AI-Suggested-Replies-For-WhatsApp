@@ -1,5 +1,28 @@
 import {strToBuf, bufToB64, b64ToBuf, DEFAULT_PROMPT, getDefaultModel, showToast, defaultBase, defaultAuth} from '../utils.js';
 
+function sanitizeBaseEndpoint(raw) {
+  if (!raw) return '';
+  try {
+    let s = String(raw).trim();
+    const u = new URL(s);
+    // Force to /v1 regardless of what was pasted
+    u.pathname = '/v1';
+    u.search = '';
+    u.hash = '';
+    return `${u.origin}/v1`;
+  } catch {
+    return String(raw).trim();
+  }
+}
+function isValidBaseEndpoint(s) {
+  try {
+    const u = new URL(s);
+    return /^\/v1$/.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
 // --- Theme management: preference-aware (auto/light/dark) ---
 let _osMediaQuery = null;
 
@@ -114,6 +137,11 @@ const contextLimitInput = document.getElementById('context-message-limit');
 const endpointInput = document.getElementById('api-endpoint');
 const authSchemeSelect = document.getElementById('auth-scheme');
 
+endpointInput.addEventListener('blur', () => {
+  const n = sanitizeBaseEndpoint(endpointInput.value);
+  if (n && n !== endpointInput.value) endpointInput.value = n;
+});
+
 let apiKeys = {};
 let modelNames = {};
 let encKeyB64 = '';
@@ -197,27 +225,17 @@ async function getOrCreateEncKey() {
 async function validateApiKey() {
   const apiKey = apiKeyInput.value.trim();
   const provider = apiChoiceSelect.value;
-
-  const scheme = (provider === 'custom'
-    ? (authSchemeSelect.value || 'none')
-    : defaultAuth(provider));
-
-  // For keyless custom endpoints, still try to fetch /models
-  if (!apiKey && !(provider === 'custom' && scheme === 'none')) {
-    setFeedback('', '');
-    return;
-  }
+  const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
 
   let base = provider === 'custom'
-    ? (endpointInput.value.trim() || providerUrls.custom || '')
+    ? sanitizeBaseEndpoint(endpointInput.value.trim() || providerUrls.custom || '')
     : defaultBase(provider);
-  while (base.endsWith('/')) base = base.slice(0, -1);
+  if (provider === 'custom') endpointInput.value = base;
 
-  if (!base) {
-    setFeedback('Enter a valid endpoint', 'error');
+  if (!isValidBaseEndpoint(base)) {
+    setFeedback('Enter a valid base URL ending with /v1 (e.g., http://localhost:1234/v1)', 'error');
     return;
   }
-
   const url = `${base}/models`;
   const headers = {};
   if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
@@ -251,8 +269,13 @@ async function saveOptions(e) {
   const authScheme = authSchemeSelect?.value || 'bearer';
 
   if (provider === 'custom') {
-    if (endpoint) providerUrls.custom = endpoint;
-    else delete providerUrls.custom;
+    const normalized = sanitizeBaseEndpoint(endpoint);
+    if (!isValidBaseEndpoint(normalized)) {
+      setFeedback('Please enter a valid base URL that ends with /v1 (e.g., http://localhost:1234/v1)', 'error');
+      saveBtn && (saveBtn.disabled = false);
+      return;
+    }
+    providerUrls.custom = normalized;
     authSchemes.custom = authScheme;
   }
 
@@ -295,8 +318,8 @@ async function saveOptions(e) {
   });
   chrome.storage.sync.set({contextMessageLimit: contextLimit});
 
-  if (provider === 'custom' && endpoint) {
-    chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: endpoint }, () => {});
+  if (provider === 'custom' && providerUrls.custom) {
+    chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: providerUrls.custom }, () => {});
   }
 }
 
@@ -321,6 +344,10 @@ async function loadProviderFields(provider) {
     showAuthRow(false);
   }
 
+  if (provider === 'custom' && endpointInput.value) {
+    const n = sanitizeBaseEndpoint(endpointInput.value);
+    if (n && n !== endpointInput.value) endpointInput.value = n;
+  }
   toggleApiKeyRow();
 
   if (!apiKeys[provider] || !encKeyB64) return;
@@ -380,12 +407,18 @@ function renderSummary(logs) {
   const pTok = nums(filtered.map(l => l.tokensPrompt));
   const cTok = nums(filtered.map(l => l.tokensCompletion));
   const tTok = nums(filtered.map(l => l.tokensTotal));
+  const ttfb = nums(filtered.map(l => l.ttfbMs));
+  const tps  = nums(filtered.map(l => l.tokensPerSec));
+  const avgTtfb = avg(ttfb);
+  const avgTps  = tps.length ? (tps.reduce((a, b) => a + b, 0) / tps.length).toFixed(1) : '0.0';
 
   const data = [
     `Total: ${total}`,
     `Success: ${success}`,
     `Errors: ${errors}`,
     `Error Rate: ${errorRate}%`,
+    `Avg TTFT: ${avgTtfb} ms`,
+    `Avg Tok/s: ${avgTps}`,
     `Avg Duration: ${avg(durs)} ms`,
     `Avg Tokens — P:${avg(pTok)} C:${avg(cTok)} T:${avg(tTok)}`
   ];
@@ -460,6 +493,14 @@ function renderLlmHistoryTable(logs) {
     t.textContent = (log.tokensTotal ?? '—');
     row.appendChild(t);
 
+    const ttft = document.createElement('td');
+    ttft.textContent = (log.ttfbMs ?? '—');
+    row.appendChild(ttft);
+
+    const tps = document.createElement('td');
+    tps.textContent = (typeof log.tokensPerSec === 'number' ? log.tokensPerSec.toFixed(1) : '—');
+    row.appendChild(tps);
+
     const rt = document.createElement('td');
     rt.textContent = (log.durationMs ?? log.responseTime ?? '—');
     row.appendChild(rt);
@@ -518,6 +559,8 @@ const CSV_HEADERS = [
   'Prompt Tokens',
   'Completion Tokens',
   'Total Tokens',
+  'TTFT (ms)',
+  'Tok/s',
   'Response Time (ms)'
 ];
 
@@ -530,6 +573,8 @@ function toCsvRows(logs) {
     'Prompt Tokens': (log.tokensPrompt ?? ''),
     'Completion Tokens': (log.tokensCompletion ?? ''),
     'Total Tokens': (log.tokensTotal ?? ''),
+    'TTFT (ms)': (log.ttfbMs ?? ''),
+    'Tok/s': (typeof log.tokensPerSec === 'number' ? log.tokensPerSec.toFixed(1) : ''),
     'Response Time (ms)': (log.durationMs ?? log.responseTime ?? '')
   }));
 }

@@ -3,6 +3,21 @@
   'use strict';
   const {extensionEnabled = true} = await chrome.storage.local.get({extensionEnabled: true});
   if (!extensionEnabled) return;
+  try {
+    const { apiChoice = 'openai', providerUrls = {} } =
+      await chrome.storage.local.get({ apiChoice: 'openai', providerUrls: {} });
+    if (apiChoice === 'custom') {
+      const base = (providerUrls.custom || '').trim();
+      const valid = base && /^https?:\/\//i.test(base) && /^\/v1\/?$/.test(new URL(base).pathname);
+      if (!valid) {
+        console.warn('Extension passive mode: Custom provider not configured or invalid base; skipping UI injection.');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Extension passive mode due to config parse error:', e);
+    return;
+  }
   if (window.__gptContentScriptLoaded) return;
   window.__gptContentScriptLoaded = true;
 
