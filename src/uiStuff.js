@@ -11,12 +11,15 @@ function createGptButton(label = 'Suggest Response', id) {
     gptButton,
     setBusy(value) {
       if (value) {
-        const width = gptButton.getBoundingClientRect().width;
-        gptButton.style.width = `${width}px`;
+        const rect = gptButton.getBoundingClientRect();
+        // Lock current footprint so the spinner centers correctly
+        gptButton.style.minWidth = Math.ceil(rect.width) + 'px';
+        gptButton.style.minHeight = Math.ceil(rect.height) + 'px';
         gptButton.classList.add('loading');
       } else {
         gptButton.classList.remove('loading');
-        gptButton.style.width = '';
+        gptButton.style.minWidth = '';
+        gptButton.style.minHeight = '';
       }
     }
   };
