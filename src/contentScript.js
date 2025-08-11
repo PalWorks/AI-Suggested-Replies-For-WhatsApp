@@ -225,6 +225,17 @@ body.dark { --icon-filter: invert(1) brightness(1.2); }
   --message-spinner-border: rgba(0,0,0,.1);
   --message-spinner-top: #54656F;
 }
+
+/* Icon color tokens for our inline SVG buttons */
+:root { --gpt-icon-color: #54656F; }            /* WA light tone */
+body.dark { --gpt-icon-color: #d1d7db; }        /* WA dark tone */
+/* Fallback for OS dark when WA hasn't set body.dark */
+@media (prefers-color-scheme: dark) {
+  body:not(.dark) { --gpt-icon-color: #d1d7db; }
+}
+/* Extension theme override (Options -> themePreference) */
+[data-gpt-theme="dark"]  { --gpt-icon-color: #d1d7db; }
+[data-gpt-theme="light"] { --gpt-icon-color: #54656F; }
 `;
 document.head.appendChild(style);
 
@@ -722,6 +733,7 @@ async function writeTextToSuggestionField(response, isLoading = false) {
       if (entry) {
         entry.streamingText += request.data;
         if (entry.paragraphEl) entry.paragraphEl.textContent = entry.streamingText;
+        updateDeleteButtonVisibility();
       }
     } else if (request.type === 'done') {
       if (entry?.buttonObject) entry.buttonObject.setBusy(false);
@@ -740,6 +752,7 @@ async function writeTextToSuggestionField(response, isLoading = false) {
       if (entry?.buttonObject) entry.buttonObject.setBusy(false);
       if (entry?.paragraphEl && request.response?.text) {
         entry.paragraphEl.textContent = request.response.text.replace(/^Me:\s*/, '');
+        updateDeleteButtonVisibility();
       }
       pendingRequests.delete(id);
     }
