@@ -142,7 +142,7 @@ function createDeleteButton(newFooter, newButtonContainer) {
   return deleteButton;
 }
 
-function createGptFooter(footer, mainNode) {
+function createGptFooter(footer, mainNode, notConfigured = false) {
     // Clone the footer and get the main container
     const newFooter = footer.cloneNode(true);
     const mainContainerRef = footer.querySelector('.copyable-area');
@@ -153,6 +153,11 @@ function createGptFooter(footer, mainNode) {
     // Create primary "Suggest Response" button and improvement button
     const gptButtonObject = createGptButton('Suggest Response', 'ai-reply-btn');
     const improveButtonObject = createGptButton('Improve my response', 'improve-response-btn');
+    const setupButtonObject = createGptButton('Setup AI Smart Reply Suggestions', 'setup-ai-btn');
+    setupButtonObject.gptButton.classList.add('setup-ai-btn');
+    setupButtonObject.gptButton.addEventListener('click', () => {
+        chrome.runtime.sendMessage({action: 'openOptionsPage'});
+    });
 
     function createButtonContainer() {
         const buttonContainer = document.createElement('div');
@@ -185,9 +190,19 @@ function createGptFooter(footer, mainNode) {
     }
     mainFooterContainer.insertBefore(buttonContainer, inputContainer);
     mainFooterContainer.append(buttonContainer2);
-    // Add both buttons to container in a single row
+    // Add buttons to container in a single row
     buttonContainer.appendChild(gptButtonObject.gptButton);
     buttonContainer.appendChild(improveButtonObject.gptButton);
+    buttonContainer.appendChild(setupButtonObject.gptButton);
+
+    if (notConfigured) {
+        gptButtonObject.gptButton.disabled = true;
+        improveButtonObject.gptButton.disabled = true;
+        const lbl = gptButtonObject.gptButton.querySelector('.gptbtn-text');
+        if (lbl) lbl.textContent = 'Set up AI Suggestions';
+    } else {
+        setupButtonObject.gptButton.style.display = 'none';
+    }
 
     // Create and add delete button
     const deleteButton = createDeleteButton(newFooter, buttonContainer2);
@@ -230,7 +245,8 @@ function createGptFooter(footer, mainNode) {
         gptButtonObject,
         improveButtonObject,
         copyButton,
-        deleteButton
+        deleteButton,
+        setupButtonObject
     };
 }
 

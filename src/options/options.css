@@ -865,6 +865,34 @@ label {
   padding: 0;
 }
 
+#provider-settings .provider-settings .api-key-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#provider-settings .provider-settings .api-key-row .api-key-wrap {
+  flex: 1;
+}
+
+#provider-settings .provider-settings #endpoint-row {
+  display: contents;
+}
+
+.secondary-button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+.secondary-button:hover {
+  background: var(--bg-chip);
+}
+
 /* Mobile: stack labels above fields, let width be fluid */
 @media (max-width: 720px) {
   #provider-settings .provider-settings {

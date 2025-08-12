@@ -140,7 +140,15 @@ const authSchemeSelect = document.getElementById('auth-scheme');
 const openWaBtn = document.getElementById('open-wa-web');
 if (openWaBtn) {
   openWaBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+    chrome.tabs.query({ url: 'https://web.whatsapp.com/*' }, tabs => {
+      if (tabs && tabs.length) {
+        const tab = tabs[0];
+        chrome.tabs.reload(tab.id);
+        chrome.tabs.update(tab.id, { active: true });
+      } else {
+        chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+      }
+    });
   });
 }
 
@@ -160,12 +168,16 @@ apiChoiceSelect.addEventListener('change', () => {
   loadProviderFields(apiChoiceSelect.value);
   clearTimeout(validateTimeout);
   validateTimeout = setTimeout(validateApiKey, 500);
+  hideOpenWa();
 });
 
 apiKeyInput.addEventListener('input', () => {
   clearTimeout(validateTimeout);
   validateTimeout = setTimeout(validateApiKey, 500);
+  hideOpenWa();
 });
+
+modelInput.addEventListener('input', hideOpenWa);
 
 toggleBtn.addEventListener('click', () => {
   const isText = apiKeyInput.type === 'text';
@@ -178,6 +190,7 @@ authSchemeSelect.addEventListener('change', () => {
   toggleApiKeyRow();
   clearTimeout(validateTimeout);
   validateTimeout = setTimeout(validateApiKey, 300);
+  hideOpenWa();
 });
 
 function showAuthRow(show) {
@@ -200,6 +213,26 @@ async function reflectQuickStart() {
 }
 document.addEventListener('DOMContentLoaded', reflectQuickStart);
 
+async function updateOpenWaButton() {
+  if (!openWaBtn || !saveBtn) return;
+  try {
+    const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
+    const state = await getConfigState();
+    if (state.isConfigured) {
+      openWaBtn.style.display = 'inline-block';
+      saveBtn.style.display = 'none';
+    } else {
+      openWaBtn.style.display = 'none';
+      saveBtn.style.display = '';
+    }
+  } catch {}
+}
+
+function hideOpenWa() {
+  if (openWaBtn) openWaBtn.style.display = 'none';
+  if (saveBtn) saveBtn.style.display = '';
+}
+
 async function testModels() {
   const provider = apiChoiceSelect.value;
   const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
@@ -218,8 +251,7 @@ async function testModels() {
     headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
   }
 
-  const out = document.getElementById('models-result');
-  out.textContent = 'Testing…';
+  setFeedback('Testing…');
   try {
     const res = await fetch(url, { headers });
     const data = await res.json();
@@ -228,9 +260,14 @@ async function testModels() {
       .map(m => (typeof m === 'string' ? m : (m.id || m.name || m.slug)))
       .filter(Boolean)
       .slice(0, 5);
-    out.textContent = ids.length ? `Models: ${ids.join(', ')}` : 'No models found.';
+    if (res.ok) {
+      const msg = ids.length ? `Key verified. Available models: ${ids.join(', ')}` : 'Key verified. No models found.';
+      setFeedback(msg, 'success');
+    } else {
+      setFeedback('Invalid key', 'error');
+    }
   } catch (e) {
-    out.textContent = 'Error fetching models.';
+    setFeedback('Error fetching models.', 'error');
   }
 }
 const testBtn = document.getElementById('test-models');
@@ -368,9 +405,6 @@ async function saveOptions(e) {
     }
     const original = saveBtn.textContent;
     saveBtn.textContent = 'Saved!';
-    try {
-      showToast('Saved. Open WhatsApp Web to try it.', { anchor: saveBtn, align: 'right', duration: 2200 });
-    } catch {}
     setTimeout(() => { saveBtn.textContent = original; }, 1800);
     try {
       const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
@@ -379,6 +413,7 @@ async function saveOptions(e) {
       const qs = document.getElementById('quick-start');
       if (qs) qs.hidden = !!state.isConfigured;
     } catch {}
+    updateOpenWaButton();
   });
   chrome.storage.sync.set({contextMessageLimit: contextLimit});
 
@@ -450,6 +485,7 @@ async function restoreOptions() {
   contextLimitInput.value = syncItems.contextMessageLimit;
   await loadProviderFields(items.apiChoice);
   validateApiKey();
+  updateOpenWaButton();
 }
 
 function renderSummary(logs) {
