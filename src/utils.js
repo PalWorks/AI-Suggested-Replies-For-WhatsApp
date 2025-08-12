@@ -90,7 +90,7 @@ export function getDefaultModel(provider) {
   switch (provider) {
     case 'openrouter':
     case 'openai':
-      return 'gpt-4o-mini'; // default lightweight GPT-4
+      return 'gpt-4o-mini';
     case 'anthropic':
       return 'claude-3-haiku-20240307';
     case 'mistral':
