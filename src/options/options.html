@@ -88,10 +88,7 @@
             <li>Choose a provider.</li>
             <li>Paste API key (if required).</li>
             <li>Click <strong>Save</strong>.</li>
-            <li><button type="button" id="open-wa-web" class="primary-button">Open WhatsApp Web</button></li>
           </ol>
-          <div class="helper">Not sure your setup works? Try <button type="button" id="test-models" class="primary-button">Test models</button></div>
-          <div id="models-result" class="helper monospace" aria-live="polite"></div>
         </div>
         <form id="options-form">
           <fieldset id="provider-settings">
@@ -113,18 +110,24 @@
               <!-- Model Name -->
               <label for="model-name">Model Name</label>
               <div class="stack">
-                <input type="text" id="model-name" name="model-name" class="wide-input" placeholder="gpt-3.5-turbo">
+                <input type="text" id="model-name" name="model-name" class="wide-input" placeholder="gpt-4o-mini">
                 <p class="helper">Enter the model name exactly as supported by your provider. Leave blank for default.</p>
               </div>
 
               <!-- API Key -->
               <label for="api-key">API Key</label>
               <div class="stack">
-                <div class="api-key-wrap">
-                  <input type="password" id="api-key" name="api-key" class="wide-input monospace api-key-input" aria-describedby="api-key-feedback">
-                  <button type="button" id="toggle-api-key" aria-label="Show API key" class="eye-icon">
-                    <img src="../icons/Eye Icon - Show Password.svg" alt="">
-                  </button>
+                <div class="api-line">
+                  <div class="api-key-wrap">
+                    <input type="password" id="api-key" name="api-key"
+                           class="wide-input monospace api-key-input"
+                           aria-describedby="api-key-feedback">
+                    <button type="button" id="toggle-api-key"
+                            aria-label="Show API key" class="eye-icon">
+                      <img src="../icons/Eye Icon - Show Password.svg" alt="">
+                    </button>
+                  </div>
+                  <button type="button" id="test-models" class="secondary-button">Test models</button>
                 </div>
                 <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
               </div>
@@ -171,7 +174,10 @@
               </label>
             </div>
 
-            <button type="submit" id="save-button" class="primary-button">Save</button>
+            <div class="actions-row">
+              <button type="submit" id="save-button" class="primary-button">Save</button>
+              <button type="button" id="open-wa-web" class="primary-button ghost" hidden>Open WhatsApp Web</button>
+            </div>
           </form>
         </section>
       <section id="history" class="tab-content" role="tabpanel">
