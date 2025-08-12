@@ -137,6 +137,13 @@ const contextLimitInput = document.getElementById('context-message-limit');
 const endpointInput = document.getElementById('api-endpoint');
 const authSchemeSelect = document.getElementById('auth-scheme');
 
+const openWaBtn = document.getElementById('open-wa-web');
+if (openWaBtn) {
+  openWaBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+  });
+}
+
 endpointInput.addEventListener('blur', () => {
   const n = sanitizeBaseEndpoint(endpointInput.value);
   if (n && n !== endpointInput.value) endpointInput.value = n;
@@ -179,6 +186,55 @@ function showAuthRow(show) {
   if (label) label.style.display = show ? '' : 'none';
   if (field) field.style.display = show ? '' : 'none';
 }
+
+function showEndpointRow(show) {
+  const row = document.getElementById('endpoint-row');
+  if (row) row.style.display = show ? '' : 'none';
+}
+
+async function reflectQuickStart() {
+  const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
+  const state = await getConfigState();
+  const qs = document.getElementById('quick-start');
+  if (qs) qs.hidden = !!state.isConfigured;
+}
+document.addEventListener('DOMContentLoaded', reflectQuickStart);
+
+async function testModels() {
+  const provider = apiChoiceSelect.value;
+  const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
+  let base = provider === 'custom'
+    ? sanitizeBaseEndpoint(endpointInput.value.trim() || providerUrls.custom || '')
+    : defaultBase(provider);
+  if (provider === 'custom') endpointInput.value = base;
+
+  const url = `${base}/models`;
+  const headers = {};
+  const apiKey = apiKeyInput.value.trim();
+  if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://web.whatsapp.com';
+    headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
+  }
+
+  const out = document.getElementById('models-result');
+  out.textContent = 'Testing…';
+  try {
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+    const list = (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []));
+    const ids = list
+      .map(m => (typeof m === 'string' ? m : (m.id || m.name || m.slug)))
+      .filter(Boolean)
+      .slice(0, 5);
+    out.textContent = ids.length ? `Models: ${ids.join(', ')}` : 'No models found.';
+  } catch (e) {
+    out.textContent = 'Error fetching models.';
+  }
+}
+const testBtn = document.getElementById('test-models');
+if (testBtn) testBtn.addEventListener('click', testModels);
 
 function toggleApiKeyRow() {
   const keyLabel = document.querySelector('label[for="api-key"]');
@@ -306,15 +362,23 @@ async function saveOptions(e) {
     authSchemes
   };
 
-  chrome.storage.local.set(storeObj, () => {
+  chrome.storage.local.set(storeObj, async () => {
     if (showAdvancedImprove && !prev.showAdvancedImprove) {
       refreshWhatsAppTabs();
     }
     const original = saveBtn.textContent;
-    saveBtn.textContent = 'Saved';
-    setTimeout(() => {
-      saveBtn.textContent = original;
-    }, 2000);
+    saveBtn.textContent = 'Saved!';
+    try {
+      showToast('Saved. Open WhatsApp Web to try it.', { anchor: saveBtn, align: 'right', duration: 2200 });
+    } catch {}
+    setTimeout(() => { saveBtn.textContent = original; }, 1800);
+    try {
+      const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
+      const state = await getConfigState();
+      await chrome.storage.local.set({ onboardingDone: !!state.isConfigured });
+      const qs = document.getElementById('quick-start');
+      if (qs) qs.hidden = !!state.isConfigured;
+    } catch {}
   });
   chrome.storage.sync.set({contextMessageLimit: contextLimit});
 
@@ -335,12 +399,14 @@ async function loadProviderFields(provider) {
     authSchemeSelect.disabled = false;
     endpointInput.value = providerUrls.custom || '';
     authSchemeSelect.value = authSchemes.custom || 'none';
+    showEndpointRow(true);
     showAuthRow(true);
   } else {
     endpointInput.readOnly = true;
     authSchemeSelect.disabled = true;
     endpointInput.value = defaultBase(provider);
     authSchemeSelect.value = defaultAuth(provider);
+    showEndpointRow(false);
     showAuthRow(false);
   }
 

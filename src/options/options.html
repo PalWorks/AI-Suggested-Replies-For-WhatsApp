@@ -82,6 +82,17 @@
     <main id="main-content" class="main-content">
       <section id="settings" class="tab-content active" role="tabpanel">
         <h1 class="page-title">Settings</h1>
+        <div id="quick-start" class="card quickstart" hidden>
+          <h2>Quick Start</h2>
+          <ol>
+            <li>Choose a provider.</li>
+            <li>Paste API key (if required).</li>
+            <li>Click <strong>Save</strong>.</li>
+            <li><button type="button" id="open-wa-web" class="primary-button">Open WhatsApp Web</button></li>
+          </ol>
+          <div class="helper">Not sure your setup works? Try <button type="button" id="test-models" class="primary-button">Test models</button></div>
+          <div id="models-result" class="helper monospace" aria-live="polite"></div>
+        </div>
         <form id="options-form">
           <fieldset id="provider-settings">
             <legend>Provider Settings</legend>
@@ -119,10 +130,12 @@
               </div>
 
               <!-- API Endpoint (read-only for built-ins, editable for Custom) -->
-              <label for="api-endpoint">API Endpoint</label>
-              <div class="stack">
-                <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="http://localhost:1234/v1">
-                <div class="helper">Base URL of your provider (OpenAI‑compatible). Paste anything, we'll auto‑correct to <code>.../v1</code>. Do NOT include <code>/chat/completions</code>.</div>
+              <div id="endpoint-row">
+                <label for="api-endpoint">API Endpoint</label>
+                <div class="stack">
+                  <input id="api-endpoint" class="api-key-input monospace" type="text" placeholder="http://localhost:1234/v1">
+                  <div class="helper">Base URL (must end with <code>/v1</code>). Do NOT include <code>/chat/completions</code>.</div>
+                </div>
               </div>
 
               <!-- Auth Header (show only for Custom; we’ll toggle via JS) -->

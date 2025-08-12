@@ -891,3 +891,16 @@ label {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+.card.quickstart {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0 16px;
+}
+.card.quickstart h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.card.quickstart .monospace { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
