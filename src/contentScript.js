@@ -14,26 +14,42 @@
     document.documentElement.removeAttribute('data-gpt-theme');
   }
   if (!extensionEnabled) return;
+  function insertFirstRunHint() {
+    const host = document.querySelector('[contenteditable="true"]')?.closest('footer') || document.body;
+    if (!host || host.__gptFirstRunHint) return;
+    const pill = document.createElement('button');
+    pill.textContent = 'Set up AI Suggestions';
+    pill.type = 'button';
+    pill.style.cssText = 'position:fixed; right:12px; bottom:12px; z-index:9999; padding:8px 12px; border-radius:999px; border:1px solid #b3e2cd; background:#e7f6ee; color:#075e54; cursor:pointer;';
+    pill.addEventListener('click', () => chrome.runtime.sendMessage({ action: 'openOptionsPage' }));
+    document.body.appendChild(pill);
+    host.__gptFirstRunHint = pill;
+  }
 
-  // Determine whether the extension is fully configured.
-  let _configured = true;
   try {
-    const { apiChoice = 'openai', apiKeys = {}, encKey = '', providerUrls = {}, authSchemes = {} } =
-      await chrome.storage.local.get({ apiChoice: 'openai', apiKeys: {}, encKey: '', providerUrls: {}, authSchemes: {} });
+    const { apiChoice = 'openai', providerUrls = {}, apiKeys = {}, authSchemes = {} } =
+      await chrome.storage.local.get({ apiChoice: 'openai', providerUrls: {}, apiKeys: {}, authSchemes: {} });
 
-    const hasKey = !!(apiKeys?.[apiChoice]?.encryptedKey && encKey);
+    let notConfigured = false;
     if (apiChoice === 'custom') {
       const base = (providerUrls.custom || '').trim();
       let valid = false;
-      try { valid = base && /^https?:\/\//i.test(base) && /^\/v1\/?$/.test(new URL(base).pathname); } catch {}
-      const scheme = (authSchemes.custom || 'none');
-      _configured = valid && (scheme === 'none' || hasKey);
+      try { const u = new URL(base); valid = u.pathname === '/v1'; } catch {}
+      const needsKey = (authSchemes.custom || 'none') !== 'none';
+      const hasKey = !!apiKeys.custom;
+      notConfigured = !(valid && (!needsKey || hasKey));
     } else {
-      _configured = hasKey; // built-ins require a key
+      const needsKey = true;
+      const hasKey = !!apiKeys[apiChoice];
+      notConfigured = !hasKey;
+    }
+    if (notConfigured) {
+      insertFirstRunHint();
+      return;
     }
   } catch (e) {
-    console.warn('Configuration check error:', e);
-    _configured = false;
+    insertFirstRunHint();
+    return;
   }
   if (window.__gptContentScriptLoaded) return;
   window.__gptContentScriptLoaded = true;
@@ -143,17 +159,6 @@ style.textContent = `
   background: #e7f6ee !important;
   color: #075e54 !important;
   border-color: #b3e2cd !important;
-}
-/* Emphasized nudge button */
-.wa-reply-btn.nudge-setup {
-  background: #25D366 !important;
-  color: #fff !important;
-  border-color: #1ebe5d !important;
-}
-.wa-reply-btn.nudge-setup:hover,
-.wa-reply-btn.nudge-setup:focus {
-  background: #1ebe5d !important;
-  color: #fff !important;
 }
 
 .gpt-message {
@@ -528,10 +533,6 @@ function getDraftText() {
 function updateImproveButtonState() {
   const button = globalImproveButtonObject && globalImproveButtonObject.gptButton;
   if (!button) return;
-  if (!_configured) {
-    button.disabled = true;
-    return;
-  }
   const hasText = getDraftText().length > 0;
   button.disabled = !hasText;
 }
@@ -633,9 +634,7 @@ function injectUI(mainNode) {
         gptButtonObject,
         improveButtonObject,
         copyButton,
-        deleteButton,
-        buttonContainer,
-        buttonContainer2
+        deleteButton
       } = createGptFooter(footer, mainNode);
     globalGptButtonObject = gptButtonObject;
     globalImproveButtonObject = improveButtonObject;
@@ -663,20 +662,6 @@ function injectUI(mainNode) {
   });
   const improveButton = improveButtonObject.gptButton;
   improveButton.addEventListener('click', improveButtonClicked);
-
-  // If not configured, disable main actions and add a "Set up AI Suggestions" nudge
-  if (!_configured) {
-    gptButton.disabled = true;
-    improveButton.disabled = true;
-    const setupBtn = document.createElement('button');
-    setupBtn.type = 'button';
-    setupBtn.className = 'gptbtn wa-reply-btn nudge-setup';
-    setupBtn.textContent = 'Set up AI Suggestions';
-    (buttonContainer2 || buttonContainer).appendChild(setupBtn);
-    setupBtn.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'openOptionsPage' }, () => {});
-    });
-  }
 
   // Watch input changes to toggle the "Improve my response" button
   const textarea = mainNode.querySelector('[contenteditable="true"]');
