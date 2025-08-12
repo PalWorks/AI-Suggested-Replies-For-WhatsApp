@@ -77,6 +77,7 @@
   --bg-card: var(--bg-card-light);
   --bg-chip: var(--bg-chip-light);
   --border-color: #d1d5db; /* Stronger border in light mode */
+  --ps-field-width: 600px;
 }
 :root[data-theme="dark"] {
   --text-primary: var(--text-primary-dark);
@@ -727,73 +728,124 @@ label {
 .wa-toast.show { opacity: 1; }
 
 /* === UNIFORM INPUT SYSTEM === */
-/* Remove all existing provider-settings rules and replace with: */
 
+/* Provider settings layout and field styling */
 #provider-settings .provider-settings {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 16px 24px;
+  grid-template-columns: 180px var(--ps-field-width);
+  max-width: calc(180px + var(--ps-field-width));
   align-items: start;
-  max-width: 1000px;
-  margin: 0;
 }
 
-/* Uniform input styling for ALL form inputs */
-#provider-settings input,
-#provider-settings select,
-#provider-settings textarea,
-#context-settings input,
-#context-settings textarea {
+/* Fix grid layout for endpoint row container */
+#provider-settings .provider-settings #endpoint-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: inherit;
+  align-items: start;
+}
+
+/* Ensure auth header elements align properly */
+#provider-settings .provider-settings #auth-scheme-label,
+#provider-settings .provider-settings #auth-scheme-field {
+  display: contents;
+}
+
+/* Custom provider field styling */
+#endpoint-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: inherit;
+  align-items: start;
+}
+
+#endpoint-row label,
+#endpoint-row .stack {
+  display: block;
+}
+
+/* Auth header field styling */
+#auth-scheme-label {
+  align-self: start;
+  padding-top: 8px;
+}
+
+#auth-scheme-field {
+  align-self: start;
+}
+
+/* Ensure custom provider fields integrate properly with grid */
+.provider-settings > *:not(.stack):not(label) {
+  display: contents;
+}
+
+.provider-settings > div:not(.stack) {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: inherit;
+  align-items: start;
+}
+
+/* Improve label and field alignment */
+#provider-settings .provider-settings label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin: 0;
+  align-self: start;
+  padding-top: 10px; /* Align with input field padding */
+  line-height: 1.4;
+}
+
+/* Ensure all input fields have consistent styling */
+#provider-settings .provider-settings input,
+#provider-settings .provider-settings select {
   width: 100%;
-  max-width: 600px;
-  min-width: 300px;
+  max-width: none !important;
+  min-width: 0;
   height: 40px;
   padding: 8px 12px;
-  border: 2px solid var(--border-color) !important;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-main);
   color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
   box-sizing: border-box;
-  transition: border-color 0.2s ease;
 }
 
-/* Textarea specific sizing */
-#provider-settings textarea,
-#context-settings textarea {
-  height: auto;
-  min-height: 120px;
-  resize: vertical;
-  line-height: 1.4;
+/* Helper text styling */
+.provider-settings .helper {
+  font-size: 12px;
+  color: var(--nav-subtext);
+  margin-top: 4px;
+  line-height: 1.3;
 }
 
-/* Focus states */
-#provider-settings input:focus,
-#provider-settings select:focus,
-#provider-settings textarea:focus,
-#context-settings input:focus,
-#context-settings textarea:focus {
-  border-color: var(--wa-accent, #00a884) !important;
-  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1) !important;
-  outline: none;
-}
-
-/* Enhanced validation states */
-input.success {
-  border-color: #10b981 !important;
-}
-
-input.error {
-  border-color: #ef4444 !important;
-}
-
-/* Stack container for inputs with helper text */
+/* Stack container improvements */
 .provider-settings .stack {
   display: flex;
   flex-direction: column;
   gap: 4px;
   width: 100%;
+  align-self: start;
+}
+
+/* Smooth transitions for field visibility */
+#endpoint-row,
+#auth-scheme-label,
+#auth-scheme-field {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#endpoint-row[style*="display: none"],
+#auth-scheme-label[style*="display: none"],
+#auth-scheme-field[style*="display: none"] {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* API Key wrapper with eye button */
@@ -831,71 +883,102 @@ input.error {
   filter: var(--icon-filter);
 }
 
-/* Helper text */
-.helper {
-  font-size: 12px;
-  color: var(--nav-subtext);
-  margin: 0;
-  line-height: 1.3;
+/* Context Settings layout and styling */
+#context-settings {
+  border-top: 2px solid var(--border-color);
+  padding-top: 24px;
+  margin-top: 32px;
 }
 
-/* Labels */
-#provider-settings label,
+#context-settings .form-row {
+  display: grid;
+  grid-template-columns: 180px var(--ps-field-width);
+  gap: 16px 24px;
+  align-items: start;
+  margin-bottom: 20px;
+  max-width: calc(180px + var(--ps-field-width));
+}
+
+#context-settings input,
+#context-settings textarea {
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
+}
+
+#context-settings input[type="number"],
+#context-settings textarea {
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+#context-settings input[type="number"] {
+  height: 40px;
+}
+
+#context-settings textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+/* Context Settings labels to match Provider Settings */
 #context-settings label {
   font-weight: 600;
   color: var(--text-primary);
   font-size: 14px;
   margin: 0;
   align-self: start;
-  padding-top: 8px; /* Align with input padding */
+  padding-top: 10px;
+  line-height: 1.4;
 }
 
-/* Context Settings uniform styling */
-#context-settings {
-  border-top: 2px solid var(--border-color);
-  padding-top: 24px;
-  margin-top: 24px;
+/* Focus states */
+#provider-settings .provider-settings input:focus,
+#provider-settings .provider-settings select:focus,
+#context-settings input:focus,
+#context-settings textarea:focus {
+  border-color: var(--wa-accent, #00a884) !important;
+  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1) !important;
+  outline: none;
 }
 
-#context-settings .form-row {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 16px 24px;
-  align-items: start;
-  margin-bottom: 20px;
-  max-width: 1000px;
-}
+/* Responsive layout adjustments */
+@media (max-width: 720px) {
+  #provider-settings .provider-settings {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
 
-#context-settings label[for="context-message-limit"] {
-  padding-top: 8px;
-}
-
-#context-settings label[for="prompt-template"] {
-  padding-top: 8px;
-}
-
-/* Number input specific styling */
-input[type="number"] {
-  max-width: 120px !important;
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  #provider-settings .provider-settings,
-  #context-settings .form-row {
+  #provider-settings .provider-settings #endpoint-row {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  #provider-settings input,
-  #provider-settings select,
-  #provider-settings textarea,
-  #context-settings input,
-  #context-settings textarea {
-    min-width: 250px;
+  #provider-settings .provider-settings label {
+    padding-top: 0;
+    margin-bottom: 4px;
   }
 
-  #provider-settings label,
+  .provider-settings > div:not(.stack) {
+    grid-template-columns: 1fr;
+  }
+
+  #context-settings .form-row {
+    grid-template-columns: 1fr;
+    max-width: none;
+    gap: 8px;
+  }
+
   #context-settings label {
     padding-top: 0;
     margin-bottom: 4px;
