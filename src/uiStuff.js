@@ -230,7 +230,9 @@ function createGptFooter(footer, mainNode) {
         gptButtonObject,
         improveButtonObject,
         copyButton,
-        deleteButton
+        deleteButton,
+        buttonContainer,
+        buttonContainer2
     };
 }
 
