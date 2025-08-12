@@ -174,8 +174,8 @@ function createGptFooter(footer, mainNode, notConfigured = false) {
     const buttonContainer2 = createButtonContainer();
 
     let mainFooterContainer = inputContainer.parentNode;
-    elementCount = mainFooterContainer.childElementCount
-    isWindows = elementCount === 2 // on windows the layout is different from the one on Mac (Unfortunately); on windows the attachment and speech button are outside of the main container area
+    let elementCount = mainFooterContainer.childElementCount;
+    let isWindows = elementCount === 2; // on windows the layout is different from the one on Mac (Unfortunately); on windows the attachment and speech button are outside of the main container area
     if (isWindows) {
         // mainContainerRef.childNodes[0].childNodes[0].childNodes[0].childNodes[0]
         let windowsOuterContainer = inputContainer.parentNode.parentNode.parentNode;

@@ -526,7 +526,15 @@ function renderSummary(logs) {
   el.innerHTML = data.map(txt => `<span class="summary-chip">${txt}</span>`).join('');
 }
 
-function formatISOWithTZ(timestamp, timeZone = 'Asia/Kolkata') {
+function formatISOWithTZ(timestamp, timeZone = null) {
+  // Use user's local timezone if none specified
+  if (!timeZone) {
+    try {
+      timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      timeZone = 'UTC'; // Fallback to UTC if detection fails
+    }
+  }
   const d = new Date(timestamp);
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone,
@@ -559,7 +567,7 @@ function renderLlmHistoryTable(logs) {
     const row = document.createElement('tr');
 
     const ts = document.createElement('td');
-    ts.textContent = formatISOWithTZ(log.ts ?? log.timestamp, 'Asia/Kolkata');
+    ts.textContent = formatISOWithTZ(log.ts ?? log.timestamp);
     row.appendChild(ts);
 
     const model = document.createElement('td');
@@ -582,23 +590,23 @@ function renderLlmHistoryTable(logs) {
     row.appendChild(outTd);
 
     const p = document.createElement('td');
-    p.textContent = (log.tokensPrompt ?? '—');
+    p.textContent = (typeof log.tokensPrompt === 'number' ? log.tokensPrompt : '—');
     row.appendChild(p);
 
     const c = document.createElement('td');
-    c.textContent = (log.tokensCompletion ?? '—');
+    c.textContent = (typeof log.tokensCompletion === 'number' ? log.tokensCompletion : '—');
     row.appendChild(c);
 
     const t = document.createElement('td');
-    t.textContent = (log.tokensTotal ?? '—');
+    t.textContent = (typeof log.tokensTotal === 'number' ? log.tokensTotal : '—');
     row.appendChild(t);
 
     const ttft = document.createElement('td');
-    ttft.textContent = (log.ttfbMs ?? '—');
+    ttft.textContent = (typeof log.ttfbMs === 'number' ? log.ttfbMs : '—');
     row.appendChild(ttft);
 
     const tps = document.createElement('td');
-    tps.textContent = (typeof log.tokensPerSec === 'number' ? log.tokensPerSec.toFixed(1) : '—');
+    tps.textContent = (typeof log.tokensPerSec === 'number' && !isNaN(log.tokensPerSec) ? log.tokensPerSec.toFixed(1) : '—');
     row.appendChild(tps);
 
     const rt = document.createElement('td');
@@ -666,7 +674,7 @@ const CSV_HEADERS = [
 
 function toCsvRows(logs) {
   return logs.map(log => ({
-    Timestamp: formatISOWithTZ(log.ts ?? log.timestamp, 'Asia/Kolkata'),
+    Timestamp: formatISOWithTZ(log.ts ?? log.timestamp),
     Model: log.model || '',
     'Input Chat Data': (log.inputChatData || log.chatHistory || log.chat || '').replace(/\r?\n/g, ' ↵ '),
     'Output Response': (log.outputResponse || log.reply || log.output || ''),
