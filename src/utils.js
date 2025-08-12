@@ -196,3 +196,28 @@ export async function getConfigState() {
 
   return { provider, needsKey, hasKey, base, baseValid, isConfigured };
 }
+
+export function sanitizeBaseEndpoint(url) {
+  if (!url) return '';
+  url = url.trim();
+
+  // Remove trailing slash
+  url = url.replace(/\/+$/, '');
+
+  // Ensure it ends with /v1
+  if (!url.endsWith('/v1')) {
+    url += '/v1';
+  }
+
+  return url;
+}
+
+export function isValidBaseEndpoint(url) {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname === '/v1';
+  } catch {
+    return false;
+  }
+}
