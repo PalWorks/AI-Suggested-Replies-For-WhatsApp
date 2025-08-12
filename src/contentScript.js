@@ -14,23 +14,11 @@
     document.documentElement.removeAttribute('data-gpt-theme');
   }
   if (!extensionEnabled) return;
-  function insertFirstRunHint() {
-    const host = document.querySelector('[contenteditable="true"]')?.closest('footer') || document.body;
-    if (!host || host.__gptFirstRunHint) return;
-    const pill = document.createElement('button');
-    pill.textContent = 'Set up AI Suggestions';
-    pill.type = 'button';
-    pill.style.cssText = 'position:fixed; right:12px; bottom:12px; z-index:9999; padding:8px 12px; border-radius:999px; border:1px solid #b3e2cd; background:#e7f6ee; color:#075e54; cursor:pointer;';
-    pill.addEventListener('click', () => chrome.runtime.sendMessage({ action: 'openOptionsPage' }));
-    document.body.appendChild(pill);
-    host.__gptFirstRunHint = pill;
-  }
-
+  let notConfigured = false;
   try {
     const { apiChoice = 'openai', providerUrls = {}, apiKeys = {}, authSchemes = {} } =
       await chrome.storage.local.get({ apiChoice: 'openai', providerUrls: {}, apiKeys: {}, authSchemes: {} });
 
-    let notConfigured = false;
     if (apiChoice === 'custom') {
       const base = (providerUrls.custom || '').trim();
       let valid = false;
@@ -43,14 +31,10 @@
       const hasKey = !!apiKeys[apiChoice];
       notConfigured = !hasKey;
     }
-    if (notConfigured) {
-      insertFirstRunHint();
-      return;
-    }
   } catch (e) {
-    insertFirstRunHint();
-    return;
+    notConfigured = true;
   }
+  window.__gptNotConfigured = notConfigured;
   if (window.__gptContentScriptLoaded) return;
   window.__gptContentScriptLoaded = true;
 
@@ -140,6 +124,12 @@ style.textContent = `
 .gptbtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.setup-ai-btn {
+  background: var(--wa-accent, #25d366) !important;
+  color: #fff !important;
+  border-color: var(--wa-accent, #25d366) !important;
 }
 
 .wa-reply-btn {
@@ -534,7 +524,7 @@ function updateImproveButtonState() {
   const button = globalImproveButtonObject && globalImproveButtonObject.gptButton;
   if (!button) return;
   const hasText = getDraftText().length > 0;
-  button.disabled = !hasText;
+  button.disabled = window.__gptNotConfigured || !hasText;
 }
 
 // Handles "Improve my response" button clicks
@@ -635,7 +625,7 @@ function injectUI(mainNode) {
         improveButtonObject,
         copyButton,
         deleteButton
-      } = createGptFooter(footer, mainNode);
+      } = createGptFooter(footer, mainNode, window.__gptNotConfigured);
     globalGptButtonObject = gptButtonObject;
     globalImproveButtonObject = improveButtonObject;
     globalDeleteButton = deleteButton;
