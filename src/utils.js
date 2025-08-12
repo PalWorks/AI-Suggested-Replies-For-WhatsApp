@@ -90,8 +90,7 @@ export function getDefaultModel(provider) {
   switch (provider) {
     case 'openrouter':
     case 'openai':
-      // Use the faster/cheaper multimodal default by default
-      return 'gpt-4o-mini';
+      return 'gpt-3.5-turbo';
     case 'anthropic':
       return 'claude-3-haiku-20240307';
     case 'mistral':

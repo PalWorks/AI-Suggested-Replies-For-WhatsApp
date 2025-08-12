@@ -133,11 +133,16 @@ const showIcon = '../icons/Eye Icon - Show Password.svg';
 const hideIcon = '../icons/Eye Icon - Hide Password.svg';
 const feedbackBox = document.getElementById('api-key-feedback');
 const saveBtn = document.getElementById('save-button');
-const openWaBtn = document.getElementById('open-wa-web');
-const testModelsBtn = document.getElementById('test-models');
 const contextLimitInput = document.getElementById('context-message-limit');
 const endpointInput = document.getElementById('api-endpoint');
 const authSchemeSelect = document.getElementById('auth-scheme');
+
+const openWaBtn = document.getElementById('open-wa-web');
+if (openWaBtn) {
+  openWaBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+  });
+}
 
 endpointInput.addEventListener('blur', () => {
   const n = sanitizeBaseEndpoint(endpointInput.value);
@@ -175,16 +180,6 @@ authSchemeSelect.addEventListener('change', () => {
   validateTimeout = setTimeout(validateApiKey, 300);
 });
 
-if (testModelsBtn) {
-  testModelsBtn.addEventListener('click', () => {
-    clearTimeout(validateTimeout);
-    validateApiKey(true); // true => show model list
-  });
-}
-if (openWaBtn) {
-  openWaBtn.addEventListener('click', openWhatsAppWeb);
-}
-
 function showAuthRow(show) {
   const label = document.getElementById('auth-scheme-label') || document.querySelector('label[for="auth-scheme"]');
   const field = document.getElementById('auth-scheme-field') || document.getElementById('auth-scheme')?.closest('.stack') || document.getElementById('auth-scheme')?.parentElement;
@@ -204,6 +199,42 @@ async function reflectQuickStart() {
   if (qs) qs.hidden = !!state.isConfigured;
 }
 document.addEventListener('DOMContentLoaded', reflectQuickStart);
+
+async function testModels() {
+  const provider = apiChoiceSelect.value;
+  const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
+  let base = provider === 'custom'
+    ? sanitizeBaseEndpoint(endpointInput.value.trim() || providerUrls.custom || '')
+    : defaultBase(provider);
+  if (provider === 'custom') endpointInput.value = base;
+
+  const url = `${base}/models`;
+  const headers = {};
+  const apiKey = apiKeyInput.value.trim();
+  if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://web.whatsapp.com';
+    headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
+  }
+
+  const out = document.getElementById('models-result');
+  out.textContent = 'Testing…';
+  try {
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+    const list = (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []));
+    const ids = list
+      .map(m => (typeof m === 'string' ? m : (m.id || m.name || m.slug)))
+      .filter(Boolean)
+      .slice(0, 5);
+    out.textContent = ids.length ? `Models: ${ids.join(', ')}` : 'No models found.';
+  } catch (e) {
+    out.textContent = 'Error fetching models.';
+  }
+}
+const testBtn = document.getElementById('test-models');
+if (testBtn) testBtn.addEventListener('click', testModels);
 
 function toggleApiKeyRow() {
   const keyLabel = document.querySelector('label[for="api-key"]');
@@ -236,32 +267,6 @@ function setFeedback(message, type) {
   }
 }
 
-function parseModelIds(payload) {
-  try {
-    const out = new Set();
-    const data = payload?.data || payload?.models || payload;
-    if (Array.isArray(data)) {
-      for (const m of data) {
-        if (typeof m === 'string') out.add(m);
-        else if (m?.id) out.add(String(m.id));
-        else if (m?.name) out.add(String(m.name));
-      }
-    }
-    return Array.from(out).sort((a,b) => a.localeCompare(b)).slice(0, 40);
-  } catch { return []; }
-}
-
-async function openWhatsAppWeb() {
-  chrome.tabs.query({ url: 'https://web.whatsapp.com/*' }, (tabs) => {
-    if (tabs && tabs.length) {
-      for (const t of tabs) { chrome.tabs.reload(t.id); }
-      chrome.tabs.update(tabs[0].id, { active: true });
-    } else {
-      chrome.tabs.create({ url: 'https://web.whatsapp.com/' });
-    }
-  });
-}
-
 async function getOrCreateEncKey() {
   const {encKey} = await chrome.storage.local.get({encKey: ''});
   if (encKey) {
@@ -273,7 +278,7 @@ async function getOrCreateEncKey() {
   return key;
 }
 
-async function validateApiKey(showModels = false) {
+async function validateApiKey() {
   const apiKey = apiKeyInput.value.trim();
   const provider = apiChoiceSelect.value;
   const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
@@ -298,25 +303,11 @@ async function validateApiKey(showModels = false) {
 
   try {
     const res = await fetch(url, { headers });
-    const ok = res.ok;
-    let msg = '';
-    let type = ok ? 'success' : 'error';
-    let modelList = [];
-    if (ok) {
-      const payload = await res.json().catch(() => null);
-      modelList = parseModelIds(payload);
-    }
     if (scheme === 'none') {
-      msg = ok ? 'Endpoint reachable' : `Endpoint error (${res.status})`;
+      setFeedback(res.ok ? 'Endpoint reachable' : `Endpoint error (${res.status})`, res.ok ? 'success' : 'error');
     } else {
-      msg = ok ? 'Key verified' : 'Invalid key';
+      setFeedback(res.ok ? 'Key verified' : 'Invalid key', res.ok ? 'success' : 'error');
     }
-    if (ok && showModels && modelList.length) {
-      msg += `. Available models: ${modelList.join(', ')}`;
-      // hint the placeholder to first popular one
-      modelInput.placeholder = modelList[0] || getDefaultModel(provider);
-    }
-    setFeedback(msg, type);
   } catch (e) {
     setFeedback('Connection error (is the server running?)', 'error');
   }
@@ -372,16 +363,15 @@ async function saveOptions(e) {
   };
 
   chrome.storage.local.set(storeObj, async () => {
-    // After saving, nudge user to (re)open WA Web
-    if (openWaBtn) {
-      openWaBtn.hidden = false;
-      openWaBtn.classList.remove('pulse');
-      void openWaBtn.offsetWidth;
-      openWaBtn.classList.add('pulse');
+    if (showAdvancedImprove && !prev.showAdvancedImprove) {
+      refreshWhatsAppTabs();
     }
     const original = saveBtn.textContent;
-    saveBtn.textContent = 'Saved';
-    setTimeout(() => { saveBtn.textContent = original; }, 1200);
+    saveBtn.textContent = 'Saved!';
+    try {
+      showToast('Saved. Open WhatsApp Web to try it.', { anchor: saveBtn, align: 'right', duration: 2200 });
+    } catch {}
+    setTimeout(() => { saveBtn.textContent = original; }, 1800);
     try {
       const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
       const state = await getConfigState();
@@ -395,9 +385,6 @@ async function saveOptions(e) {
   if (provider === 'custom' && providerUrls.custom) {
     chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: providerUrls.custom }, () => {});
   }
-
-  // Optionally refresh currently open WA tabs so the new config takes effect immediately
-  refreshWhatsAppTabs();
 }
 
 async function loadProviderFields(provider) {
