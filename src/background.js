@@ -29,6 +29,13 @@ function sanitizeBaseEndpoint(raw) {
 
 const CONTENT_SCRIPTS = ['parser.js', 'uiStuff.js', 'improveDialog.js', 'contentScript.js'];
 
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install') {
+    chrome.storage.local.set({ onboardingDone: false, firstRunAt: Date.now() });
+    chrome.runtime.openOptionsPage();
+  }
+});
+
 let decryptedApiKeys = {};
 let extensionEnabled = true;
 
@@ -308,9 +315,10 @@ function statusToUserMessage(status) {
 async function initExtension() {
   await loadExtensionEnabled();
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'openOptionsPage') {
+    if (request && request.action === 'openOptionsPage') {
       chrome.runtime.openOptionsPage();
-      sendResponse({received: true});
+      sendResponse({ ok: true });
+      return true;
     } else if (request.message === 'sendChatToGpt') {
       sendLLM(request.prompt, sender.tab.id, request.inputChatData, request.requestId);
       sendResponse({received: true});

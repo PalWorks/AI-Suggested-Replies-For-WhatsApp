@@ -14,19 +14,41 @@
     document.documentElement.removeAttribute('data-gpt-theme');
   }
   if (!extensionEnabled) return;
+  function insertFirstRunHint() {
+    const host = document.querySelector('[contenteditable="true"]')?.closest('footer') || document.body;
+    if (!host || host.__gptFirstRunHint) return;
+    const pill = document.createElement('button');
+    pill.textContent = 'Set up AI Suggestions';
+    pill.type = 'button';
+    pill.style.cssText = 'position:fixed; right:12px; bottom:12px; z-index:9999; padding:8px 12px; border-radius:999px; border:1px solid #b3e2cd; background:#e7f6ee; color:#075e54; cursor:pointer;';
+    pill.addEventListener('click', () => chrome.runtime.sendMessage({ action: 'openOptionsPage' }));
+    document.body.appendChild(pill);
+    host.__gptFirstRunHint = pill;
+  }
+
   try {
-    const { apiChoice = 'openai', providerUrls = {} } =
-      await chrome.storage.local.get({ apiChoice: 'openai', providerUrls: {} });
+    const { apiChoice = 'openai', providerUrls = {}, apiKeys = {}, authSchemes = {} } =
+      await chrome.storage.local.get({ apiChoice: 'openai', providerUrls: {}, apiKeys: {}, authSchemes: {} });
+
+    let notConfigured = false;
     if (apiChoice === 'custom') {
       const base = (providerUrls.custom || '').trim();
-      const valid = base && /^https?:\/\//i.test(base) && /^\/v1\/?$/.test(new URL(base).pathname);
-      if (!valid) {
-        console.warn('Extension passive mode: Custom provider not configured or invalid base; skipping UI injection.');
-        return;
-      }
+      let valid = false;
+      try { const u = new URL(base); valid = u.pathname === '/v1'; } catch {}
+      const needsKey = (authSchemes.custom || 'none') !== 'none';
+      const hasKey = !!apiKeys.custom;
+      notConfigured = !(valid && (!needsKey || hasKey));
+    } else {
+      const needsKey = true;
+      const hasKey = !!apiKeys[apiChoice];
+      notConfigured = !hasKey;
+    }
+    if (notConfigured) {
+      insertFirstRunHint();
+      return;
     }
   } catch (e) {
-    console.warn('Extension passive mode due to config parse error:', e);
+    insertFirstRunHint();
     return;
   }
   if (window.__gptContentScriptLoaded) return;

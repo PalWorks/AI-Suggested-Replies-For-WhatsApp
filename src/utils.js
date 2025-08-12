@@ -145,19 +145,54 @@ export function showToast(message, opts = {}) {
 
 export function defaultBase(provider) {
   switch (provider) {
+    case 'openai':
+      return 'https://api.openai.com/v1';
     case 'openrouter':
       return 'https://openrouter.ai/api/v1';
     case 'anthropic':
       return 'https://api.anthropic.com/v1';
     case 'mistral':
       return 'https://api.mistral.ai/v1';
-    case 'openai':
-      return 'https://api.openai.com/v1';
     default:
       return '';
   }
 }
 
 export function defaultAuth(provider) {
-  return provider === 'anthropic' ? 'x-api-key' : 'bearer';
+  switch (provider) {
+    case 'openai':
+    case 'openrouter':
+    case 'anthropic':
+    case 'mistral':
+      return 'bearer';
+    default:
+      return 'none';
+  }
+}
+
+export async function getConfigState() {
+  const {
+    apiChoice = 'openai',
+    apiKeys = {},
+    providerUrls = {},
+    authSchemes = {}
+  } = await chrome.storage.local.get({ apiChoice: 'openai', apiKeys: {}, providerUrls: {}, authSchemes: {} });
+
+  const provider = apiChoice;
+  const effAuth = provider === 'custom' ? (authSchemes.custom || 'none') : defaultAuth(provider);
+  const needsKey = effAuth !== 'none';
+  const hasKey = !!apiKeys[provider];
+  let base = provider === 'custom' ? (providerUrls.custom || '') : defaultBase(provider);
+
+  let baseValid = false;
+  try {
+    const u = new URL(base);
+    baseValid = (u.pathname === '/v1');
+  } catch {}
+
+  const isConfigured = (provider === 'custom')
+    ? (baseValid && (!needsKey || hasKey))
+    : (!needsKey || hasKey);
+
+  return { provider, needsKey, hasKey, base, baseValid, isConfigured };
 }
