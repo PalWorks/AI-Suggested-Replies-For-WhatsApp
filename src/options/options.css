@@ -526,8 +526,10 @@ button {
 }
 
 .helper {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--nav-subtext);
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 .input-group {
@@ -585,9 +587,9 @@ input.error {
 }
 
 .system-instructions-textarea {
-  min-width: 600px;
   width: 100%;
-  max-width: 960px;     /* wider so the next section is visible without extra scroll */
+  max-width: none !important;
+  min-width: 0;
   min-height: 160px;
 }
 
@@ -835,8 +837,8 @@ input.error {
 .helper {
   font-size: 12px;
   color: var(--nav-subtext);
-  margin: 0;
-  line-height: 1.3;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 /* Labels */
@@ -850,20 +852,30 @@ input.error {
   padding-top: 8px; /* Align with input padding */
 }
 
+#context-settings label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin: 0;
+  align-self: start;
+  padding-top: 8px;
+  line-height: 1.4;
+}
+
 /* Context Settings uniform styling */
 #context-settings {
   border-top: 2px solid var(--border-color);
-  padding-top: 24px;
-  margin-top: 24px;
+  padding-top: 32px;
+  margin-top: 40px;
 }
 
 #context-settings .form-row {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 180px var(--ps-field-width);
   gap: 16px 24px;
   align-items: start;
   margin-bottom: 20px;
-  max-width: 1000px;
+  max-width: calc(180px + var(--ps-field-width));
 }
 
 #context-settings label[for="context-message-limit"] {
@@ -875,15 +887,44 @@ input.error {
 }
 
 /* Number input specific styling */
-input[type="number"] {
+#context-message-limit {
+  width: 120px !important;
   max-width: 120px !important;
 }
 
+/* Fix custom provider fields layout without breaking existing structure */
+#endpoint-row {
+  display: contents;
+}
+
+#endpoint-row label,
+#endpoint-row .stack {
+  display: block;
+}
+
+/* Ensure API Endpoint input matches other provider inputs */
+#api-endpoint {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+/* Auth header elements should participate in the grid properly */
+#auth-scheme-label {
+  align-self: start;
+  padding-top: 8px;
+}
+
+#auth-scheme-field {
+  align-self: start;
+}
+
 /* Mobile responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 720px) {
   #provider-settings .provider-settings,
   #context-settings .form-row {
     grid-template-columns: 1fr;
+    max-width: none;
     gap: 8px;
   }
 
@@ -899,6 +940,21 @@ input[type="number"] {
   #context-settings label {
     padding-top: 0;
     margin-bottom: 4px;
+  }
+
+  #context-settings {
+    margin-top: 32px;
+    padding-top: 24px;
+  }
+
+  #endpoint-row {
+    display: block;
+  }
+
+  #endpoint-row label,
+  #endpoint-row .stack {
+    display: block;
+    margin-bottom: 8px;
   }
 }
 
@@ -1047,4 +1103,25 @@ input.error {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Strengthen input field borders for better visibility */
+#provider-settings input,
+#provider-settings select,
+#provider-settings textarea,
+#context-settings input,
+#context-settings textarea {
+  border: 2px solid var(--border-color) !important;
+  transition: border-color 0.2s ease !important;
+}
+
+/* Enhanced focus states with stronger borders */
+#provider-settings input:focus,
+#provider-settings select:focus,
+#provider-settings textarea:focus,
+#context-settings input:focus,
+#context-settings textarea:focus {
+  border-color: var(--wa-accent, #00a884) !important;
+  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1) !important;
+  outline: none !important;
 }
