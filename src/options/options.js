@@ -113,6 +113,26 @@ document.addEventListener('DOMContentLoaded', () => {
   reloadLogsAndSummary();
   setupNavigation();
   loadReferences();
+
+  const openWaBtn = document.getElementById('open-wa-web');
+  if (openWaBtn) {
+    openWaBtn.addEventListener('click', async () => {
+      try {
+        const tabs = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' });
+
+        if (tabs.length > 0) {
+          await chrome.tabs.reload(tabs[0].id);
+          await chrome.tabs.update(tabs[0].id, { active: true });
+          await chrome.windows.update(tabs[0].windowId, { focused: true });
+        } else {
+          await chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+        }
+      } catch (error) {
+        console.error('Error opening WhatsApp Web:', error);
+        chrome.tabs.create({ url: 'https://web.whatsapp.com' });
+      }
+    });
+  }
 });
 document.getElementById('options-form').addEventListener('submit', saveOptions);
 document.getElementById('download-csv').addEventListener('click', downloadCsv);
@@ -136,21 +156,6 @@ const saveBtn = document.getElementById('save-button');
 const contextLimitInput = document.getElementById('context-message-limit');
 const endpointInput = document.getElementById('api-endpoint');
 const authSchemeSelect = document.getElementById('auth-scheme');
-
-const openWaBtn = document.getElementById('open-wa-web');
-if (openWaBtn) {
-  openWaBtn.addEventListener('click', () => {
-    chrome.tabs.query({ url: 'https://web.whatsapp.com/*' }, tabs => {
-      if (tabs && tabs.length) {
-        const tab = tabs[0];
-        chrome.tabs.reload(tab.id);
-        chrome.tabs.update(tab.id, { active: true });
-      } else {
-        chrome.tabs.create({ url: 'https://web.whatsapp.com' });
-      }
-    });
-  });
-}
 
 endpointInput.addEventListener('blur', () => {
   const n = sanitizeBaseEndpoint(endpointInput.value);
@@ -205,73 +210,10 @@ function showEndpointRow(show) {
   if (row) row.style.display = show ? '' : 'none';
 }
 
-async function reflectQuickStart() {
-  const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
-  const state = await getConfigState();
-  const qs = document.getElementById('quick-start');
-  if (qs) qs.hidden = !!state.isConfigured;
-}
-document.addEventListener('DOMContentLoaded', reflectQuickStart);
-
-async function updateOpenWaButton() {
-  if (!openWaBtn || !saveBtn) return;
-  try {
-    const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
-    const state = await getConfigState();
-    if (state.isConfigured) {
-      openWaBtn.style.display = 'inline-block';
-      saveBtn.style.display = 'none';
-    } else {
-      openWaBtn.style.display = 'none';
-      saveBtn.style.display = '';
-    }
-  } catch {}
-}
-
 function hideOpenWa() {
-  if (openWaBtn) openWaBtn.style.display = 'none';
-  if (saveBtn) saveBtn.style.display = '';
+  const btn = document.getElementById('open-wa-web');
+  if (btn) btn.style.display = 'none';
 }
-
-async function testModels() {
-  const provider = apiChoiceSelect.value;
-  const scheme = (provider === 'custom' ? (authSchemeSelect.value || 'none') : defaultAuth(provider));
-  let base = provider === 'custom'
-    ? sanitizeBaseEndpoint(endpointInput.value.trim() || providerUrls.custom || '')
-    : defaultBase(provider);
-  if (provider === 'custom') endpointInput.value = base;
-
-  const url = `${base}/models`;
-  const headers = {};
-  const apiKey = apiKeyInput.value.trim();
-  if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
-  if (scheme === 'x-api-key' && apiKey) headers['x-api-key'] = apiKey;
-  if (provider === 'openrouter') {
-    headers['HTTP-Referer'] = 'https://web.whatsapp.com';
-    headers['X-Title'] = 'AI Suggested Replies For WhatsApp';
-  }
-
-  setFeedback('Testing…');
-  try {
-    const res = await fetch(url, { headers });
-    const data = await res.json();
-    const list = (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []));
-    const ids = list
-      .map(m => (typeof m === 'string' ? m : (m.id || m.name || m.slug)))
-      .filter(Boolean)
-      .slice(0, 5);
-    if (res.ok) {
-      const msg = ids.length ? `Key verified. Available models: ${ids.join(', ')}` : 'Key verified. No models found.';
-      setFeedback(msg, 'success');
-    } else {
-      setFeedback('Invalid key', 'error');
-    }
-  } catch (e) {
-    setFeedback('Error fetching models.', 'error');
-  }
-}
-const testBtn = document.getElementById('test-models');
-if (testBtn) testBtn.addEventListener('click', testModels);
 
 function toggleApiKeyRow() {
   const keyLabel = document.querySelector('label[for="api-key"]');
@@ -329,6 +271,7 @@ async function validateApiKey() {
     setFeedback('Enter a valid base URL ending with /v1 (e.g., http://localhost:1234/v1)', 'error');
     return;
   }
+
   const url = `${base}/models`;
   const headers = {};
   if (scheme === 'bearer' && apiKey) headers.Authorization = `Bearer ${apiKey}`;
@@ -343,7 +286,26 @@ async function validateApiKey() {
     if (scheme === 'none') {
       setFeedback(res.ok ? 'Endpoint reachable' : `Endpoint error (${res.status})`, res.ok ? 'success' : 'error');
     } else {
-      setFeedback(res.ok ? 'Key verified' : 'Invalid key', res.ok ? 'success' : 'error');
+      if (res.ok) {
+        // Fetch and display available models
+        try {
+          const data = await res.json();
+          const list = (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.models) ? data.models : []));
+          const modelIds = list
+            .map(m => (typeof m === 'string' ? m : (m.id || m.name || m.slug)))
+            .filter(Boolean)
+            .slice(0, 5);
+
+          const modelsText = modelIds.length
+            ? `Key verified. Here are few available models: ${modelIds.join(', ')}`
+            : 'Key verified. No models found.';
+          setFeedback(modelsText, 'success');
+        } catch (modelError) {
+          setFeedback('Key verified, but could not fetch models.', 'success');
+        }
+      } else {
+        setFeedback('Invalid key', 'error');
+      }
     }
   } catch (e) {
     setFeedback('Connection error (is the server running?)', 'error');
@@ -352,73 +314,110 @@ async function validateApiKey() {
 
 async function saveOptions(e) {
   e.preventDefault();
-  const provider = apiChoiceSelect.value;
-  const apiKey = apiKeyInput.value.trim();
-  const modelName = modelInput.value.trim();
-  const promptTemplate = document.getElementById('prompt-template').value;
-  const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
-  const contextLimit = Math.min(100, Math.max(1, parseInt(contextLimitInput.value, 10) || 10));
-  const endpoint = endpointInput?.value?.trim() || '';
-  const authScheme = authSchemeSelect?.value || 'bearer';
+  const saveBtn = document.getElementById('save-button');
+  const openWaBtn = document.getElementById('open-wa-web');
+  const saveFeedback = document.getElementById('save-feedback');
 
-  if (provider === 'custom') {
-    const normalized = sanitizeBaseEndpoint(endpoint);
-    if (!isValidBaseEndpoint(normalized)) {
-      setFeedback('Please enter a valid base URL that ends with /v1 (e.g., http://localhost:1234/v1)', 'error');
-      saveBtn && (saveBtn.disabled = false);
-      return;
+  // Disable save button during processing
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const provider = apiChoiceSelect.value;
+    const apiKey = apiKeyInput.value.trim();
+    const modelName = modelInput.value.trim();
+    const promptTemplate = document.getElementById('prompt-template').value;
+    const showAdvancedImprove = document.getElementById('show-advanced-improve').checked;
+    const contextLimit = Math.min(100, Math.max(1, parseInt(contextLimitInput.value, 10) || 10));
+    const endpoint = endpointInput?.value?.trim() || '';
+    const authScheme = authSchemeSelect?.value || 'bearer';
+
+    if (provider === 'custom') {
+      const normalized = sanitizeBaseEndpoint(endpoint);
+      if (!isValidBaseEndpoint(normalized)) {
+        throw new Error('Please enter a valid base URL that ends with /v1 (e.g., http://localhost:1234/v1)');
+      }
+      providerUrls.custom = normalized;
+      authSchemes.custom = authScheme;
     }
-    providerUrls.custom = normalized;
-    authSchemes.custom = authScheme;
-  }
 
-  const key = await getOrCreateEncKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await getOrCreateEncKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  let encrypted;
-  if (apiKey && !(provider === 'custom' && authScheme === 'none')) {
-    encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
-    apiKeys[provider] = {encryptedKey: bufToB64(encrypted), iv: bufToB64(iv)};
-  } else {
-    delete apiKeys[provider];
-  }
-  if (modelName) {
-    modelNames[provider] = modelName;
-  } else {
-    delete modelNames[provider];
-  }
+    let encrypted;
+    if (apiKey && !(provider === 'custom' && authScheme === 'none')) {
+      encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, strToBuf(apiKey));
+      apiKeys[provider] = {encryptedKey: bufToB64(encrypted), iv: bufToB64(iv)};
+    } else {
+      delete apiKeys[provider];
+    }
 
-  const prev = await chrome.storage.local.get({showAdvancedImprove: false});
-  const storeObj = {
-    apiChoice: provider,
-    apiKeys,
-    modelNames,
-    promptTemplate,
-    showAdvancedImprove,
-    providerUrls,
-    authSchemes
-  };
+    if (modelName) {
+      modelNames[provider] = modelName;
+    } else {
+      delete modelNames[provider];
+    }
 
-  chrome.storage.local.set(storeObj, async () => {
+    const prev = await chrome.storage.local.get({showAdvancedImprove: false});
+    const storeObj = {
+      apiChoice: provider,
+      apiKeys,
+      modelNames,
+      promptTemplate,
+      showAdvancedImprove,
+      providerUrls,
+      authSchemes
+    };
+
+    // Save to storage
+    await new Promise((resolve) => {
+      chrome.storage.local.set(storeObj, resolve);
+    });
+
+    await chrome.storage.sync.set({contextMessageLimit: contextLimit});
+
+    // Success handling
+    saveBtn.textContent = 'Saved!';
+    saveFeedback.textContent = 'Settings saved successfully!';
+    saveFeedback.className = 'save-feedback success';
+    saveFeedback.style.display = 'inline-block';
+    openWaBtn.style.display = 'inline-block';
+
+    // Reset save button after 2 seconds
+    setTimeout(() => {
+      saveBtn.textContent = 'Save';
+      saveFeedback.style.display = 'none';
+    }, 2000);
+
     if (showAdvancedImprove && !prev.showAdvancedImprove) {
       refreshWhatsAppTabs();
     }
-    const original = saveBtn.textContent;
-    saveBtn.textContent = 'Saved!';
-    setTimeout(() => { saveBtn.textContent = original; }, 1800);
-    try {
-      const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
-      const state = await getConfigState();
-      await chrome.storage.local.set({ onboardingDone: !!state.isConfigured });
-      const qs = document.getElementById('quick-start');
-      if (qs) qs.hidden = !!state.isConfigured;
-    } catch {}
-    updateOpenWaButton();
-  });
-  chrome.storage.sync.set({contextMessageLimit: contextLimit});
 
-  if (provider === 'custom' && providerUrls.custom) {
-    chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: providerUrls.custom }, () => {});
+    // Update configuration state
+    const { getConfigState } = await import(chrome.runtime.getURL('utils.js'));
+    const state = await getConfigState();
+    await chrome.storage.local.set({ onboardingDone: !!state.isConfigured });
+
+    if (provider === 'custom' && providerUrls.custom) {
+      chrome.runtime.sendMessage({ message: 'providerChanged', providerUrl: providerUrls.custom }, () => {});
+    }
+
+  } catch (error) {
+    // Error handling
+    console.error('Save error:', error);
+    saveFeedback.textContent = error.message || 'Failed to save settings. Please try again.';
+    saveFeedback.className = 'save-feedback error';
+    saveFeedback.style.display = 'inline-block';
+
+    setTimeout(() => {
+      saveFeedback.style.display = 'none';
+    }, 4000);
+  } finally {
+    // Re-enable save button
+    saveBtn.disabled = false;
+    if (saveBtn.textContent === 'Saving...') {
+      saveBtn.textContent = 'Save';
+    }
   }
 }
 
@@ -485,7 +484,6 @@ async function restoreOptions() {
   contextLimitInput.value = syncItems.contextMessageLimit;
   await loadProviderFields(items.apiChoice);
   validateApiKey();
-  updateOpenWaButton();
 }
 
 function renderSummary(logs) {

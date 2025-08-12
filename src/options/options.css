@@ -698,106 +698,229 @@ label {
 }
 .wa-toast.show { opacity: 1; }
 
-/* === Provider Settings Grid (labels left, fields right) === */
-.provider-settings {
+/* === UNIFORM INPUT SYSTEM === */
+/* Remove all existing provider-settings rules and replace with: */
+
+#provider-settings .provider-settings {
   display: grid;
-  grid-template-columns: 220px minmax(420px, 1fr);
-  grid-auto-rows: auto;
-  gap: 12px 18px;
-  align-items: center;
-  margin-top: 8px;
+  grid-template-columns: 200px 1fr;
+  gap: 16px 24px;
+  align-items: start;
+  max-width: 1000px;
+  margin: 0;
 }
 
-.provider-settings label {
-  font-weight: 600;
-  margin: 0; /* grid provides spacing */
+/* Uniform input styling for ALL form inputs */
+#provider-settings input,
+#provider-settings select,
+#provider-settings textarea,
+#context-settings input,
+#context-settings textarea {
+  width: 100%;
+  max-width: 600px;
+  min-width: 300px;
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.provider-settings .input-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Textarea specific sizing */
+#provider-settings textarea,
+#context-settings textarea {
+  height: auto;
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.4;
 }
 
+/* Focus states */
+#provider-settings input:focus,
+#provider-settings select:focus,
+#provider-settings textarea:focus,
+#context-settings input:focus,
+#context-settings textarea:focus {
+  outline: none;
+  border-color: var(--wa-accent, #00a884);
+  box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.1);
+}
+
+/* Stack container for inputs with helper text */
 .provider-settings .stack {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  width: 100%;
 }
 
+/* API Key wrapper with eye button */
 .provider-settings .api-key-wrap {
-  display: grid;
-  grid-template-columns: 1fr auto; /* input + eye button */
-  gap: 8px;
+  position: relative;
+  display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .provider-settings .api-key-wrap input {
-  min-width: 0; /* allow grid to control width */
+  padding-right: 45px; /* Space for eye button */
 }
 
-.provider-settings .helper {
-  font-size: 13px;
+.provider-settings .api-key-wrap .eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 2;
+}
+
+/* Helper text */
+.helper {
+  font-size: 12px;
   color: var(--nav-subtext);
-  margin-top: 6px;
+  margin: 0;
+  line-height: 1.3;
 }
 
-/* Mobile: stack labels above fields */
-@media (max-width: 720px) {
-  .provider-settings {
+/* Labels */
+#provider-settings label,
+#context-settings label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin: 0;
+  align-self: start;
+  padding-top: 8px; /* Align with input padding */
+}
+
+/* Context Settings uniform styling */
+#context-settings {
+  border-top: 2px solid var(--border-color);
+  padding-top: 24px;
+  margin-top: 24px;
+}
+
+#context-settings .form-row {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px 24px;
+  align-items: start;
+  margin-bottom: 20px;
+  max-width: 1000px;
+}
+
+#context-settings label[for="context-message-limit"] {
+  padding-top: 8px;
+}
+
+#context-settings label[for="prompt-template"] {
+  padding-top: 8px;
+}
+
+/* Number input specific styling */
+input[type="number"] {
+  max-width: 120px !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  #provider-settings .provider-settings,
+  #context-settings .form-row {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  #provider-settings input,
+  #provider-settings select,
+  #provider-settings textarea,
+  #context-settings input,
+  #context-settings textarea {
+    min-width: 250px;
+  }
+
+  #provider-settings label,
+  #context-settings label {
+    padding-top: 0;
+    margin-bottom: 4px;
   }
 }
 
-/* Make fieldset legends look like the main page title */
-#provider-settings > legend,
-#context-settings > legend {
+/* Validation state styling */
+.feedback {
+  display: none;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 4px 0;
+}
+
+.feedback.success {
+  color: #1a7f37;
   display: block;
-  font-size: 24px;
-  font-weight: 600;
-  margin: 8px 0 6px;
+}
+
+.feedback.error {
+  color: #a61b29;
+  display: block;
+}
+
+input.success {
+  border-color: #1a7f37;
+}
+
+input.error {
+  border-color: #a61b29;
+}
+
+/* Save buttons */
+.save-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.secondary-button {
+  background: var(--bg-card);
   color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
-/* Provider Settings — grid + equal widths */
-#provider-settings .provider-settings {
-  display: grid;
-  grid-template-columns: 200px minmax(520px, 1fr);
-  align-items: center;
-  gap: 12px 18px;
-  max-width: 980px;
+.secondary-button:hover {
+  background: var(--bg-chip);
+  border-color: var(--text-secondary);
 }
 
-/* Ensure inputs fill the right grid column uniformly */
-#provider-settings .provider-settings input,
-#provider-settings .provider-settings select,
-#provider-settings .provider-settings textarea {
-  width: 100%;
-  max-width: none;
+.save-feedback {
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.3s;
 }
 
-/* API key eye button flush to the input */
-#provider-settings .provider-settings .api-key-wrap {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
+.save-feedback.success {
+  color: #1a7f37;
+  background: #e6f7e6;
+  border: 1px solid #1a7f37;
 }
 
-@media (max-width: 720px) {
-  #provider-settings .provider-settings { grid-template-columns: 1fr; }
-}
-
-/* Slight extra spacing before the System Instructions textarea */
-#context-settings .form-row label[for="prompt-template"] {
-  display: inline-block;
-  margin-bottom: 6px;
-}
-
-/* Context Settings — clearer divider */
-#context-settings {
-  border-top: 2px solid var(--border-color);
-  padding-top: 16px;
-  margin-top: 10px;
+.save-feedback.error {
+  color: #a61b29;
+  background: #ffeaea;
+  border: 1px solid #a61b29;
 }
 
 /* References table styling */
@@ -806,108 +929,36 @@ label {
   max-width: 100%;
   margin-top: 10px;
 }
+
 .references-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
-.references-table th, .references-table td {
+
+.references-table th,
+.references-table td {
   text-align: left;
   padding: 8px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: top;
 }
+
 .references-table thead th {
   position: sticky;
   top: 0;
   background: var(--bg-main);
   z-index: 1;
 }
+
 .references-table td:last-child {
   word-break: break-all; /* long URLs */
 }
 
-#context-settings .form-row + .form-row { margin-top: 14px; }
-
-/* === Provider Settings: fixed desktop field width + aligned right edge === */
-:root { --ps-field-width: 720px; }
-@media (max-width: 1024px) { :root { --ps-field-width: 600px; } }
-@media (max-width: 860px)  { :root { --ps-field-width: 520px; } }
-
-/* Two-column grid: label + fixed-width field column */
-#provider-settings .provider-settings {
-  grid-template-columns: 180px var(--ps-field-width);
-  max-width: calc(180px + var(--ps-field-width));
-}
-
-/* Make all fields fill the field column exactly */
-#provider-settings .provider-settings input,
-#provider-settings .provider-settings select,
-#provider-settings .provider-settings textarea {
-  width: 100%;
-  max-width: none !important;
-  min-width: 0;
-}
-
-/* API key eye button lives inside the input; does not add width */
-#provider-settings .provider-settings .api-key-wrap {
-  position: relative;
-  display: block;
-}
-#provider-settings .provider-settings .api-key-wrap input {
-  padding-right: 42px;
-}
-#provider-settings .provider-settings .api-key-wrap .eye-icon {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
-  padding: 0;
-}
-
-#provider-settings .provider-settings .api-key-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#provider-settings .provider-settings .api-key-row .api-key-wrap {
-  flex: 1;
-}
-
-#provider-settings .provider-settings #endpoint-row {
-  display: contents;
-}
-
-.secondary-button {
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-.secondary-button:hover {
-  background: var(--bg-chip);
-}
-
-/* Mobile: stack labels above fields, let width be fluid */
-@media (max-width: 720px) {
-  #provider-settings .provider-settings {
-    grid-template-columns: 1fr;
-    max-width: none;
-  }
-  #provider-settings .provider-settings .api-key-wrap .eye-icon {
-    right: 8px;
-  }
-}
-
-/* === References: shrink first three columns, give URL the rest === */
 .references-table {
   table-layout: fixed;   /* honor colgroup sizes */
 }
+
 .references-table col.col-prov  { width: 11rem; }
 .references-table col.col-model { width: 13rem; }
 .references-table col.col-date  { width: 9rem; }
@@ -919,16 +970,3 @@ label {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-
-.card.quickstart {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 8px 0 16px;
-}
-.card.quickstart h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-.card.quickstart .monospace { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }

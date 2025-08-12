@@ -82,15 +82,6 @@
     <main id="main-content" class="main-content">
       <section id="settings" class="tab-content active" role="tabpanel">
         <h1 class="page-title">Settings</h1>
-        <div id="quick-start" class="card quickstart" hidden>
-          <h2>Quick Start</h2>
-          <ol>
-            <li>Choose a provider.</li>
-            <li>Paste API key (if required).</li>
-            <li>Click <strong>Save</strong>.</li>
-            <li>Open WhatsApp Web.</li>
-          </ol>
-        </div>
         <form id="options-form">
           <fieldset id="provider-settings">
             <legend>Provider Settings</legend>
@@ -125,7 +116,6 @@
                       <img src="../icons/Eye Icon - Show Password.svg" alt="">
                     </button>
                   </div>
-                  <button type="button" id="test-models" class="secondary-button">Test Models</button>
                 </div>
                 <div id="api-key-feedback" class="feedback" role="status" aria-live="polite"></div>
               </div>
@@ -172,8 +162,11 @@
               </label>
             </div>
 
-            <button type="submit" id="save-button" class="primary-button">Save</button>
-            <button type="button" id="open-wa-web" class="primary-button" style="display:none">Open WhatsApp Web</button>
+            <div class="save-buttons-container" style="display: flex; align-items: center; gap: 12px; margin-top: 24px;">
+              <button type="submit" id="save-button" class="primary-button">Save</button>
+              <button type="button" id="open-wa-web" class="secondary-button" style="display: none;">Open WhatsApp Web</button>
+              <div id="save-feedback" class="save-feedback" style="display: none; font-size: 13px; margin-left: 8px;"></div>
+            </div>
           </form>
         </section>
       <section id="history" class="tab-content" role="tabpanel">
